@@ -1,0 +1,90 @@
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file 'ImageControl.ui'
+#
+# Created by: PyQt5 UI code generator 5.6
+#
+# WARNING! All changes made in this file will be lost!
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+class Ui_ImageControl(object):
+    def setupUi(self, ImageControl):
+        ImageControl.setObjectName("ImageControl")
+        ImageControl.resize(264, 583)
+        self.verticalLayout_2 = QtWidgets.QVBoxLayout(ImageControl)
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.groupBox_dataField = QtWidgets.QGroupBox(ImageControl)
+        self.groupBox_dataField.setMaximumSize(QtCore.QSize(16777215, 77))
+        self.groupBox_dataField.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.groupBox_dataField.setObjectName("groupBox_dataField")
+        self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.groupBox_dataField)
+        self.verticalLayout_3.setObjectName("verticalLayout_3")
+        self.control_dataField = QtWidgets.QComboBox(self.groupBox_dataField)
+        self.control_dataField.setObjectName("control_dataField")
+        self.verticalLayout_3.addWidget(self.control_dataField)
+        self.verticalLayout_2.addWidget(self.groupBox_dataField)
+        self.slicer_group = QtWidgets.QGroupBox(ImageControl)
+        self.slicer_group.setObjectName("slicer_group")
+        self.verticalLayout_4 = QtWidgets.QVBoxLayout(self.slicer_group)
+        self.verticalLayout_4.setObjectName("verticalLayout_4")
+        spacerItem = QtWidgets.QSpacerItem(20, 273, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_4.addItem(spacerItem)
+        self.verticalLayout_2.addWidget(self.slicer_group)
+        self.control_imageOperations_Gbox = QtWidgets.QGroupBox(ImageControl)
+        self.control_imageOperations_Gbox.setMaximumSize(QtCore.QSize(16777215, 100))
+        self.control_imageOperations_Gbox.setObjectName("control_imageOperations_Gbox")
+        self.gridLayout_2 = QtWidgets.QGridLayout(self.control_imageOperations_Gbox)
+        self.gridLayout_2.setContentsMargins(5, 5, 5, 5)
+        self.gridLayout_2.setObjectName("gridLayout_2")
+        self.control_log_check = QtWidgets.QCheckBox(self.control_imageOperations_Gbox)
+        self.control_log_check.setObjectName("control_log_check")
+        self.gridLayout_2.addWidget(self.control_log_check, 1, 1, 1, 1)
+        self.control_abs_check = QtWidgets.QCheckBox(self.control_imageOperations_Gbox)
+        self.control_abs_check.setObjectName("control_abs_check")
+        self.gridLayout_2.addWidget(self.control_abs_check, 0, 1, 1, 1)
+        self.rotate_dial = QtWidgets.QDial(self.control_imageOperations_Gbox)
+        self.rotate_dial.setMaximum(3)
+        self.rotate_dial.setPageStep(1)
+        self.rotate_dial.setSliderPosition(0)
+        self.rotate_dial.setTracking(True)
+        self.rotate_dial.setOrientation(QtCore.Qt.Horizontal)
+        self.rotate_dial.setNotchesVisible(True)
+        self.rotate_dial.setObjectName("rotate_dial")
+        self.gridLayout_2.addWidget(self.rotate_dial, 0, 4, 2, 1)
+        self.control_colorBar_check = QtWidgets.QCheckBox(self.control_imageOperations_Gbox)
+        self.control_colorBar_check.setChecked(True)
+        self.control_colorBar_check.setObjectName("control_colorBar_check")
+        self.gridLayout_2.addWidget(self.control_colorBar_check, 0, 0, 1, 1)
+        self.control_colorNorm_check = QtWidgets.QCheckBox(self.control_imageOperations_Gbox)
+        self.control_colorNorm_check.setChecked(True)
+        self.control_colorNorm_check.setObjectName("control_colorNorm_check")
+        self.gridLayout_2.addWidget(self.control_colorNorm_check, 1, 0, 1, 1)
+        self.verticalLayout_2.addWidget(self.control_imageOperations_Gbox)
+        self.control_colorSelectror_GBox = QtWidgets.QGroupBox(ImageControl)
+        self.control_colorSelectror_GBox.setMaximumSize(QtCore.QSize(16777215, 77))
+        self.control_colorSelectror_GBox.setObjectName("control_colorSelectror_GBox")
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.control_colorSelectror_GBox)
+        self.verticalLayout.setContentsMargins(5, 5, 5, 5)
+        self.verticalLayout.setSpacing(5)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.control_colors_list = QtWidgets.QComboBox(self.control_colorSelectror_GBox)
+        self.control_colors_list.setObjectName("control_colors_list")
+        self.verticalLayout.addWidget(self.control_colors_list)
+        self.verticalLayout_2.addWidget(self.control_colorSelectror_GBox)
+
+        self.retranslateUi(ImageControl)
+        QtCore.QMetaObject.connectSlotsByName(ImageControl)
+
+    def retranslateUi(self, ImageControl):
+        _translate = QtCore.QCoreApplication.translate
+        ImageControl.setWindowTitle(_translate("ImageControl", "Form"))
+        self.groupBox_dataField.setTitle(_translate("ImageControl", "Data Field"))
+        self.slicer_group.setTitle(_translate("ImageControl", "Data Slicer"))
+        self.control_imageOperations_Gbox.setTitle(_translate("ImageControl", "Image Operations"))
+        self.control_log_check.setText(_translate("ImageControl", "LOG"))
+        self.control_abs_check.setText(_translate("ImageControl", "ABS"))
+        self.control_colorBar_check.setText(_translate("ImageControl", "Color Bar"))
+        self.control_colorNorm_check.setText(_translate("ImageControl", "Color Normalize"))
+        self.control_colorSelectror_GBox.setTitle(_translate("ImageControl", "color Selector"))
+
