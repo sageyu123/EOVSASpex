@@ -217,9 +217,9 @@ class FITSViewer(Viewer_Module):
             norm = colors.LogNorm(vmin=dmin, vmax=self.image_control.Slider_dmax.value())
         else:
             if self.plot_settings['colorNorm']:
-                norm = colors.Normalize(vmin=self.image_control.Slider_dmin.value(), vmax=self.image_control.Slider_dmax.value())
-            else:
                 norm = None
+            else:
+                norm = colors.Normalize(vmin=self.image_control.Slider_dmin.value(), vmax=self.image_control.Slider_dmax.value())
 
         img_rotation = self.plot_settings['img_rotation']
 
@@ -243,14 +243,12 @@ class FITSViewer(Viewer_Module):
             self.imshow_args.update({'extent': list(self.spmap.xrange.value) + list(self.spmap.yrange.value)})
 
         if self.plot_settings['solarlimb']:
-            print(len(self.solargrid['limb']), self.solargrid['limb'])
             if len(self.solargrid['limb']) == 0:
                 self.solargrid['limb'] += self.spmap.draw_limb(axes=self.parent_widget.figure.axes, linewidth=0.5, alpha=0.5)
         else:
             self.clear_solarlimb()
 
         if self.plot_settings['solargrid']:
-            print(len(self.solargrid['grid']), self.solargrid['grid'])
             if len(self.solargrid['grid']) == 0:
                 self.solargrid['grid'] += self.spmap.draw_grid(axes=self.parent_widget.figure.axes, linewidth=0.5, alpha=0.5)
         else:
