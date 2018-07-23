@@ -14,8 +14,7 @@ import pylab
 import matplotlib.pyplot as plt
 import pandas as pd
 from IPython import embed
-from PyQt5.QtWidgets import QMainWindow, QWidget, QTextEdit, QSizePolicy, QAction, QFileDialog, QMessageBox, \
-    QApplication, QSplitter
+from PyQt5.QtWidgets import QMainWindow, QWidget, QTextEdit, QSizePolicy, QAction, QFileDialog, QMessageBox, QApplication, QSplitter
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtCore, uic, QtWidgets
@@ -24,7 +23,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 from suncasa.utils import DButil
 
 myFolder = os.path.split(os.path.realpath(__file__))[0]
-sys.path = [myFolder,os.path.join(myFolder, 'widgets')] + sys.path
+sys.path = [myFolder, os.path.join(myFolder, 'widgets')] + sys.path
 
 os.chdir(myFolder)
 
@@ -98,8 +97,8 @@ def FitSlit(xx, yy, cutwidth, cutang, cutlength, s=None, method='Polyfit'):
     ys0 = ys - cutwidths / 2. * np.sin(posangs2)
     xs1 = xs + cutwidths / 2. * np.cos(posangs2)
     ys1 = ys + cutwidths / 2. * np.sin(posangs2)
-    return {'xcen': xs, 'ycen': ys, 'xs0': xs0, 'ys0': ys0, 'xs1': xs1, 'ys1': ys1, 'cutwidth': cutwidths,
-            'posangs': posangs, 'posangs2': posangs2, 'dist': dists}
+    return {'xcen': xs, 'ycen': ys, 'xs0': xs0, 'ys0': ys0, 'xs1': xs1, 'ys1': ys1, 'cutwidth': cutwidths, 'posangs': posangs, 'posangs2': posangs2,
+            'dist': dists}
 
 
 def MakeSlit(pointDF):
@@ -107,12 +106,10 @@ def MakeSlit(pointDF):
     xx = pointDFtmp.loc[:, 'xx'].values
     yy = pointDFtmp.loc[:, 'yy'].values
     if len(pointDFtmp.index) <= 1:
-        cutslitplt = {'xcen': [], 'ycen': [], 'xs0': [], 'ys0': [], 'xs1': [], 'ys1': [], 'cutwidth': [],
-                      'posangs': [], 'posangs2': [], 'dist': []}
+        cutslitplt = {'xcen': [], 'ycen': [], 'xs0': [], 'ys0': [], 'xs1': [], 'ys1': [], 'cutwidth': [], 'posangs': [], 'posangs2': [], 'dist': []}
     else:
         # if len(pointDFtmp.index) <= 3:
-        cutslitplt = FitSlit(xx, yy, 10, 0.0,
-                             200, method='Polyfit')
+        cutslitplt = FitSlit(xx, yy, 10, 0.0, 200, method='Polyfit')
     return cutslitplt
 
 
@@ -132,8 +129,7 @@ def getimprofile(data, cutslit, xrange=None, yrange=None):
             ys0 = cutslit['ys0']
             ys1 = cutslit['ys1']
         for ll in range(num):
-            inten = DButil.improfile(data, [xs0[ll], xs1[ll]],
-                                     [ys0[ll], ys1[ll]], interp='nearest')
+            inten = DButil.improfile(data, [xs0[ll], xs1[ll]], [ys0[ll], ys1[ll]], interp='nearest')
             intens[ll] = np.mean(inten)
         intensdist = {'x': cutslit['dist'], 'y': intens}
         return intensdist
@@ -149,15 +145,13 @@ class MyMplCanvas(FigureCanvas):
         # called
 
         FigureCanvas.__init__(self, self.fig)
-        FigureCanvas.setSizePolicy(
-            self, QSizePolicy.Expanding, QSizePolicy.Expanding)
+        FigureCanvas.setSizePolicy(self, QSizePolicy.Expanding, QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
 
         self.setParent(parent)
 
         # load boot screen picture
-        self.figure_data = self.axes.imshow(
-            matplotlib.image.imread('./resources/init.jpg'))
+        self.figure_data = self.axes.imshow(matplotlib.image.imread('./resources/init.jpg'))
         self.axes.set_axis_off()
 
 
@@ -205,7 +199,6 @@ class MainWindow(QMainWindow):
         self.slitline1, = self.figure.axes.plot([], [], color='white', ls='dotted')
         self.image_layers = collections.defaultdict(list)
         self.curr_layer = None
-
 
         # --- check which modules are avaible
         for module_name, module_handle in avaible_modules.items():
@@ -266,21 +259,17 @@ class MainWindow(QMainWindow):
     def showDialog(self):
         fname = QFileDialog.getOpenFileName(self, 'Open file', '~')
         if fname[0]:
-            print(fname[0])
-            # f = open(fname[0], 'r')
+            print(fname[0])  # f = open(fname[0], 'r')
 
-            # with f:
-            #     data = f.read()
-            #     self.textEdit.setText(data)
+            # with f:  #     data = f.read()  #     self.textEdit.setText(data)
 
-    def closeEvent(self, event):
-        reply = QMessageBox.question(self, 'Message',
-                                     "Are you sure to quit?", QMessageBox.Yes |
-                                     QMessageBox.No, QMessageBox.Yes)
-        if reply == QMessageBox.Yes:
-            event.accept()
-        else:
-            event.ignore()
+    # comment this part when test
+    # def closeEvent(self, event):
+    #     reply = QMessageBox.question(self, 'Message', "Are you sure to quit?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+    #     if reply == QMessageBox.Yes:
+    #         event.accept()
+    #     else:
+    #         event.ignore()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -310,19 +299,14 @@ class MainWindow(QMainWindow):
             self.Slider_frame.setValue(1)
             self.Slider_frame.valueChanged[int].connect(self.Slider_frame_handler)
             self.label_frame.setText('{}/{}'.format(self.image_layers[nrow].idx + 1, self.image_layers[nrow].nidx))
-            self.image_layers[nrow].telescope = \
-                self.active_module.fits_data[self.active_module.fits_current_field_id].header['TELESCOP']
-            self.image_layers[nrow].drange = [np.nanmin(self.active_module.img_data),
-                                              np.nanmax(self.active_module.img_data)]
-            print(self.image_layers[nrow].drange)
+            self.image_layers[nrow].telescope = self.active_module.fits_data[self.active_module.fits_current_field_id].header['TELESCOP']
+            self.image_layers[nrow].drange = [np.nanmin(self.active_module.img_data), np.nanmax(self.active_module.img_data)]
             qc = self.active_module.image_control.control_colors_list
             allitems = []
             if self.image_layers[nrow].telescope == 'SDO/AIA':
                 for ll in range(qc.count()):
                     allitems.append(qc.itemText(ll))
-                allitems = ["sdoaia{}".format(
-                    self.active_module.fits_data[self.active_module.fits_current_field_id].header[
-                        'WAVELNTH'])] + allitems
+                allitems = ["sdoaia{}".format(self.active_module.fits_data[self.active_module.fits_current_field_id].header['WAVELNTH'])] + allitems
             else:
                 for ll in range(qc.count()):
                     if 'sdoaia' not in qc.itemText(ll):
@@ -330,48 +314,57 @@ class MainWindow(QMainWindow):
             qc.clear()
             qc.addItems(allitems)
             qc.setCurrentIndex(0)
-            self.active_module.image_control.Slider_dmin_GBox.setTitle(
-                'dmin [{0[0]:.0f}~{0[1]:.0f}] --> {0[0]:.0f}'.format(self.image_layers[nrow].drange))
-            self.active_module.image_control.Slider_dmin.setMinimum(self.image_layers[nrow].drange[0])
-            self.active_module.image_control.Slider_dmin.setMaximum(self.image_layers[nrow].drange[1])
-            self.signalDisconnect(self.active_module.image_control.Slider_dmin.valueChanged,
-                                  self.active_module.update_plot)
-            self.active_module.image_control.Slider_dmin.setValue(self.image_layers[nrow].drange[0])
-            self.active_module.image_control.Slider_dmax_GBox.setTitle(
-                'dmax [{0[0]:.0f}~{0[1]:.0f}] --> {0[1]:.0f}'.format(self.image_layers[nrow].drange))
-            self.active_module.image_control.Slider_dmax.setMinimum(self.image_layers[nrow].drange[0])
-            self.active_module.image_control.Slider_dmax.setMaximum(self.image_layers[nrow].drange[1])
-            self.signalDisconnect(self.active_module.image_control.Slider_dmax.valueChanged,
-                                  self.active_module.update_plot)
-            self.active_module.image_control.Slider_dmax.setValue(self.image_layers[nrow].drange[1])
+            dmin = self.image_layers[nrow].drange[0]
+            dmax = self.image_layers[nrow].drange[1]
+            dstep = (dmax-dmin)/100.
+            if dmax>1e5:
+                self.active_module.image_control.Slider_dmin_GBox.setTitle('dmin [{0:.2e}~{1:.2e}] --> {0:.2e}'.format(dmin, dmax))
+                self.active_module.image_control.Slider_dmin.setMinimum(dmin/1e5)
+                self.active_module.image_control.Slider_dmin.setMaximum(dmax/1e5)
+                self.active_module.image_control.Slider_dmin.setSingleStep(dstep/1e5)
+                self.active_module.image_control.Slider_dmin.setValue(dmin/1e5)
+            else:
+                self.active_module.image_control.Slider_dmin_GBox.setTitle('dmin [{0:.0f}~{1:.0f}] --> {0:.0f}'.format(dmin, dmax))
+                self.active_module.image_control.Slider_dmin.setMinimum(dmin)
+                self.active_module.image_control.Slider_dmin.setMaximum(dmax)
+                self.active_module.image_control.Slider_dmin.setSingleStep(dstep)
+                self.active_module.image_control.Slider_dmin.setValue(dmin)
+
+            if dmax > 1e5:
+                self.active_module.image_control.Slider_dmax_GBox.setTitle('dmax [{0:.2e}~{1:.2e}] --> {0:.2e}'.format(dmin, dmax))
+                self.active_module.image_control.Slider_dmax.setMinimum(dmin/1e5)
+                self.active_module.image_control.Slider_dmax.setMaximum(dmax/1e5)
+                self.active_module.image_control.Slider_dmax.setSingleStep(dstep/1e5)
+                self.active_module.image_control.Slider_dmax.setValue(dmax/1e5)
+            else:
+                self.active_module.image_control.Slider_dmax_GBox.setTitle('dmax [{0:.0f}~{1:.0f}] --> {0:.0f}'.format(dmin, dmax))
+                self.active_module.image_control.Slider_dmax.setMinimum(dmin)
+                self.active_module.image_control.Slider_dmax.setMaximum(dmax)
+                self.active_module.image_control.Slider_dmax.setSingleStep(dstep)
+                self.active_module.image_control.Slider_dmax.setValue(dmax)
+
+            self.signalDisconnect(self.active_module.image_control.Slider_dmin.valueChanged, self.active_module.update_plot)
+            self.signalDisconnect(self.active_module.image_control.Slider_dmax.valueChanged, self.active_module.update_plot)
             if self.image_layers[nrow].telescope == 'SDO/AIA':
-                self.signalDisconnect(self.active_module.image_control.control_log_check.stateChanged,
-                                      self.active_module.update_plot)
+                self.signalDisconnect(self.active_module.image_control.control_log_check.stateChanged, self.active_module.update_plot)
                 self.active_module.image_control.control_log_check.setChecked(True)
-                self.signalConnect(self.active_module.image_control.control_log_check.stateChanged,
-                                   self.active_module.update_plot)
+                self.signalConnect(self.active_module.image_control.control_log_check.stateChanged, self.active_module.update_plot)
                 clrange = DButil.sdo_aia_scale_dict(
-                    wavelength=self.active_module.fits_data[self.active_module.fits_current_field_id].header[
-                        'WAVELNTH'])
+                    wavelength=self.active_module.fits_data[self.active_module.fits_current_field_id].header['WAVELNTH'])
                 print('default color normalization:', clrange)
                 # embed()
                 self.active_module.image_control.Slider_dmin.setValue(clrange['low'])
                 self.active_module.image_control.Slider_dmax.setValue(clrange['high'])
                 self.active_module.image_control.Slider_dmin.parent().setTitle(
-                    '{0} [{1[0]:.0f}~{1[1]:.0f}] --> {2:.0f}'.format('dmin', self.image_layers[nrow].drange,
-                                                                     clrange['low']))
+                    '{0} [{1[0]:.0f}~{1[1]:.0f}] --> {2:.0f}'.format('dmin', self.image_layers[nrow].drange, clrange['low']))
                 self.active_module.image_control.Slider_dmax.parent().setTitle(
-                    '{0} [{1[0]:.0f}~{1[1]:.0f}] --> {2:.0f}'.format('dmax', self.image_layers[nrow].drange,
-                                                                     clrange['high']))
-            self.signalConnect(self.active_module.image_control.Slider_dmin.valueChanged,
-                               self.active_module.update_plot)
-            self.signalConnect(self.active_module.image_control.Slider_dmax.valueChanged,
-                               self.active_module.update_plot)
+                    '{0} [{1[0]:.0f}~{1[1]:.0f}] --> {2:.0f}'.format('dmax', self.image_layers[nrow].drange, clrange['high']))
+            self.signalConnect(self.active_module.image_control.Slider_dmin.valueChanged, self.active_module.update_plot)
+            self.signalConnect(self.active_module.image_control.Slider_dmax.valueChanged, self.active_module.update_plot)
             self.actionLoadChunk.triggered.connect(self.active_module.LoadChunk_handler)
             self.active_module.update_plot()
         elif os.path.isdir(path):
-            self.statusbar.showMessage("File type error (unknown extension)")
-            # print(paths)
+            self.statusbar.showMessage("File type error (unknown extension)")  # print(paths)
 
     def signalDisconnect(self, signal, slot):
         try:
@@ -390,8 +383,7 @@ class MainWindow(QMainWindow):
         for idx, ll in enumerate(self.image_layers[self.curr_layer].url):
             self.image_layers[self.curr_layer].idx = idx
             self.Slider_frame.setValue(idx + 1)
-            intens = getimprofile(self.active_module.img_data, cutslitplt,
-                                  xrange=list(self.active_module.spmap.xrange.value),
+            intens = getimprofile(self.active_module.img_data, cutslitplt, xrange=list(self.active_module.spmap.xrange.value),
                                   yrange=list(self.active_module.spmap.yrange.value))
             stackplt.append(intens['y'])
         if len(stackplt) > 1:
@@ -433,8 +425,7 @@ class MainWindow(QMainWindow):
         if self.actionslit.isChecked():
             if event.xdata != None:
                 if event.button == 1:
-                    clickpointDF = clickpointDF.append(pd.Series({'xx': event.xdata, 'yy': event.ydata}),
-                                                       ignore_index=True)
+                    clickpointDF = clickpointDF.append(pd.Series({'xx': event.xdata, 'yy': event.ydata}), ignore_index=True)
                 elif event.button == 3:
                     if len(clickpointDF.index) > 0:
                         clickpointDF.drop(len(clickpointDF.index) - 1, inplace=True)

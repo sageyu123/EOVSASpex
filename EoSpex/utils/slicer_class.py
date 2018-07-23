@@ -25,6 +25,7 @@ class Slicer(object):
     parent_layout = None
     data = None
     raw_shape = None
+    raw_dim = None
     dim = -1
     data_slice = None
     slicers = None
@@ -32,7 +33,7 @@ class Slicer(object):
     slicers_widgets = None
     slice_idx = None
 
-    def __init__(self, parent_obj, array, squeeze=True):
+    def __init__(self, parent_obj, array, header=None, squeeze=True):
 
         self.parent_obj = parent_obj
         self.parent_ui = parent_obj.image_control
@@ -40,6 +41,8 @@ class Slicer(object):
         self.parent_layout = parent_obj.image_control.slicer_group.layout()
         # self.parent_layout.setContentsMargins(0, 0, 0, 0)
         self.raw_shape = array.shape
+        self.raw_dim = len(self.raw_shape)
+        self.header = header
 
         if (squeeze):
             self.data = np.squeeze(array)
@@ -47,6 +50,7 @@ class Slicer(object):
             self.data = array
 
         self.dim = len(self.data.shape)
+        print('dimensions:', self.dim)
 
         if (self.dim > 2):
             self.slicers_widgets = list()
@@ -56,8 +60,14 @@ class Slicer(object):
             self.combos_widgets = list()
             self.combos = list()
             self.combos_titles = list()
-            self.slicers_names = ['Dim {} of size [{}]'.format(i, limit) for i, limit in enumerate(self.data.shape)]
-
+            if header:
+                axisname = []
+                for i, s in enumerate(self.raw_shape):
+                    if s > 1:
+                        axisname.append(header['CTYPE{}'.format(self.raw_dim - i)])
+                self.slicers_names = ['Dim {} of size [{}]'.format(axisname[i], limit) for i, limit in enumerate(self.data.shape)]
+            else:
+                self.slicers_names = ['Dim {} of size [{}]'.format(i, limit) for i, limit in enumerate(self.data.shape)]
             # clear the layout to avoid overlaying when new widget is added
             self.clearLayout(self.parent_layout)
 
@@ -93,8 +103,8 @@ class Slicer(object):
         elif self.dim == 2:
             self.data_slice = self.data
         else:
-            print('   [!] [Watning] Sorry no support for 1D data slices!')
-            self.nope = np.load('./resources/culpeo_nope.npy')
+            print('   [!] [Warning] Sorry no support for 1D data slices!')
+            self.nope = np.load('./resources/CautionDirtyData.png')
             self.nope = np.array(self.nope, dtype=np.float)
             self.data_slice = np.flipud(self.nope)
 
@@ -120,8 +130,8 @@ class Slicer(object):
         # comboset = set(self.combos_titles)
         print('dim {} is activated in {}'.format(who.currentIndex(), who.objectName()))
         # who = self.parent_ui.sender()
-        # dim = int(who.objectName())
-        # print('Value %d for dim %d' % (text, dim))
+        dim = str(who.objectName())
+        print(text, dim)  # print('Value %d for dim %s' % (text, dim))
 
     def update_slice(self, value):
         who = self.parent_ui.sender()
@@ -130,6 +140,7 @@ class Slicer(object):
         slice_idx = list(self.slice_idx)
         slice_idx[dim] = value
         slice_idx = tuple(slice_idx)
+        print(slice_idx)
         dim_the_same = ([type(x) for x in slice_idx] == [type(x) for x in self.slice_idx])
         self.slice_idx = slice_idx
         if (dim_the_same):
@@ -141,8 +152,7 @@ class Slicer(object):
             self.parent_obj.plot()
         pass
         # Set title on bar
-        self.slicers_widgets[self.slicers_widgets_idx[dim]].setTitle(
-            self.slicers_titles[self.slicers_widgets_idx[dim]] % value)
+        self.slicers_widgets[self.slicers_widgets_idx[dim]].setTitle(self.slicers_titles[self.slicers_widgets_idx[dim]] % value)
 
     def get_slice(self, nans_free=False):
         if (self.dim > 2):
@@ -185,10 +195,10 @@ class Slicer(object):
     def shape_to_str(self, shape):
         return '[' + ','.join([str(x) for x in shape]) + ']'
 
-    def make_index(self, slice_pos):
-        zeros = [0] * self.dim
-        zeros[slice_pos] = np.slice(None)
-        return tuple(zeros)
+    # def make_index(self, slice_pos):
+    #     zeros = [0] * self.dim
+    #     zeros[slice_pos] = np.slice(None)
+    #     return tuple(zeros)
 
     def clearLayout(self, layout):
         while layout.count():

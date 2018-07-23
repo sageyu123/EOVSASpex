@@ -31,7 +31,7 @@
      <property name="maximumSize">
       <size>
        <width>16777215</width>
-       <height>77</height>
+       <height>51</height>
       </size>
      </property>
      <property name="layoutDirection">
@@ -60,7 +60,13 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="groupBox_displayMode">
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>51</height>
+      </size>
+     </property>
      <property name="focusPolicy">
       <enum>Qt::TabFocus</enum>
      </property>
@@ -81,7 +87,7 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="QComboBox" name="comboBox"/>
+       <widget class="QComboBox" name="control_displayMode"/>
       </item>
      </layout>
     </widget>
@@ -137,7 +143,7 @@
      <property name="maximumSize">
       <size>
        <width>16777215</width>
-       <height>16777215</height>
+       <height>115</height>
       </size>
      </property>
      <property name="title">
@@ -158,6 +164,12 @@
       </property>
       <item>
        <widget class="QGroupBox" name="Slider_dmax_GBox">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>45</height>
+         </size>
+        </property>
         <property name="font">
          <font>
           <pointsize>9</pointsize>
@@ -181,6 +193,15 @@
          </property>
          <item row="0" column="0">
           <widget class="QSlider" name="Slider_dmax">
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="maximum">
+            <number>99</number>
+           </property>
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
@@ -191,6 +212,12 @@
       </item>
       <item>
        <widget class="QGroupBox" name="Slider_dmin_GBox">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>45</height>
+         </size>
+        </property>
         <property name="font">
          <font>
           <pointsize>9</pointsize>
@@ -214,6 +241,12 @@
          </property>
          <item row="0" column="0">
           <widget class="QSlider" name="Slider_dmin">
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>22</height>
+            </size>
+           </property>
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
@@ -377,7 +410,7 @@
   <zorder>control_DataRange_GBox</zorder>
   <zorder>control_imageOperations_Gbox</zorder>
   <zorder>control_colorSelectror_GBox</zorder>
-  <zorder>groupBox</zorder>
+  <zorder>groupBox_displayMode</zorder>
  </widget>
  <resources/>
  <connections/>

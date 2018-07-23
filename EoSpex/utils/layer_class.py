@@ -1,4 +1,9 @@
 from collections import OrderedDict
+
+
+# from enum import Enum
+# class LayerType(Enum):
+
 class Layer:
     # alpha = 1.0
     # dmax = None
@@ -11,7 +16,7 @@ class Layer:
     #     else:
     #         print('alpha value must in range of [0,1]')
 
-    def __init__(self, name, url, idx):
+    def __init__(self, name: 'layer_name', url: 'layer_url', idx: 'layer_idx') -> 'layer_class':
         self.alpha = 1.0
         self.layer_name = 'layer{}'.format(name)
         self.url = url
