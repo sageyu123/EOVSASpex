@@ -24,7 +24,6 @@ from suncasa.utils import DButil
 
 myFolder = os.path.split(os.path.realpath(__file__))[0]
 sys.path = [myFolder, os.path.join(myFolder, 'widgets')] + sys.path
-
 os.chdir(myFolder)
 
 from utils import module_manager
@@ -316,13 +315,13 @@ class MainWindow(QMainWindow):
             qc.setCurrentIndex(0)
             dmin = self.image_layers[nrow].drange[0]
             dmax = self.image_layers[nrow].drange[1]
-            dstep = (dmax-dmin)/100.
-            if dmax>1e5:
+            dstep = (dmax - dmin) / 100.
+            if dmax > 1e5:
                 self.active_module.image_control.Slider_dmin_GBox.setTitle('dmin [{0:.2e}~{1:.2e}] --> {0:.2e}'.format(dmin, dmax))
-                self.active_module.image_control.Slider_dmin.setMinimum(dmin/1e5)
-                self.active_module.image_control.Slider_dmin.setMaximum(dmax/1e5)
-                self.active_module.image_control.Slider_dmin.setSingleStep(dstep/1e5)
-                self.active_module.image_control.Slider_dmin.setValue(dmin/1e5)
+                self.active_module.image_control.Slider_dmin.setMinimum(dmin / 1e5)
+                self.active_module.image_control.Slider_dmin.setMaximum(dmax / 1e5)
+                self.active_module.image_control.Slider_dmin.setSingleStep(dstep / 1e5)
+                self.active_module.image_control.Slider_dmin.setValue(dmin / 1e5)
             else:
                 self.active_module.image_control.Slider_dmin_GBox.setTitle('dmin [{0:.0f}~{1:.0f}] --> {0:.0f}'.format(dmin, dmax))
                 self.active_module.image_control.Slider_dmin.setMinimum(dmin)
@@ -332,10 +331,10 @@ class MainWindow(QMainWindow):
 
             if dmax > 1e5:
                 self.active_module.image_control.Slider_dmax_GBox.setTitle('dmax [{0:.2e}~{1:.2e}] --> {0:.2e}'.format(dmin, dmax))
-                self.active_module.image_control.Slider_dmax.setMinimum(dmin/1e5)
-                self.active_module.image_control.Slider_dmax.setMaximum(dmax/1e5)
-                self.active_module.image_control.Slider_dmax.setSingleStep(dstep/1e5)
-                self.active_module.image_control.Slider_dmax.setValue(dmax/1e5)
+                self.active_module.image_control.Slider_dmax.setMinimum(dmin / 1e5)
+                self.active_module.image_control.Slider_dmax.setMaximum(dmax / 1e5)
+                self.active_module.image_control.Slider_dmax.setSingleStep(dstep / 1e5)
+                self.active_module.image_control.Slider_dmax.setValue(dmax / 1e5)
             else:
                 self.active_module.image_control.Slider_dmax_GBox.setTitle('dmax [{0:.0f}~{1:.0f}] --> {0:.0f}'.format(dmin, dmax))
                 self.active_module.image_control.Slider_dmax.setMinimum(dmin)

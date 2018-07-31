@@ -150,13 +150,16 @@ class FITSViewer(Viewer_Module):
                         self.fits_fields.remove(field)
                         del self.fits_fields_to_id[field]
                 # embed()
-                self.image_control.control_dataField.clear()
-                self.image_control.control_dataField.addItems(self.fits_fields)  # should remove first
-                self.image_control.control_displayMode.clear()
-                self.image_control.control_displayMode.addItems(['Images', 'Transparent Contours'])  # should remove first
+                self.image_control.control_dataField.clear()  # always remove items first
+                self.image_control.control_dataField.addItems(self.fits_fields)
                 self.parent_widget.actionDisplay_Header.setEnabled(True)
                 self.parent_widget.actionDisplay_Header.triggered.connect(self.DisplayHeader)
                 self.update_data()
+                self.image_control.control_displayMode.clear()
+                control_displaymode = ['Images']
+                for cidx, c_dm in enumerate(self.img_slicer.slicers_axisinfo['CTYPE'][:-2]):
+                    control_displaymode.append('Transparent Contours - Dim {}'.format(c_dm))
+                self.image_control.control_displayMode.addItems(control_displaymode)
                 self.set_plot_data()
         except Exception as err:
             self.parent_widget.statusbar.showMessage("[Error] Have some troubles with file: %s " % file_path)
@@ -185,10 +188,13 @@ class FITSViewer(Viewer_Module):
         self.parent_widget.image_layers[self.parent_widget.curr_layer].solarlimb = self.image_control.control_SolarLimb_check.isChecked()
         if self.image_control.control_displayMode.currentText() == 'Images':
             self.parent_widget.image_layers[self.parent_widget.curr_layer].dmode = 'imgs'
-        elif self.image_control.control_displayMode.currentText() == 'Transparent Contours':
+        elif self.image_control.control_displayMode.currentText().startswith('Transparent Contours'):
             self.parent_widget.image_layers[self.parent_widget.curr_layer].dmode = 'tconts'
         else:
             self.parent_widget.image_layers[self.parent_widget.curr_layer].dmode = 'imgs'
+        self.parent_widget.image_layers[self.parent_widget.curr_layer].slicers_axisinfo = self.img_slicer.slicers_axisinfo
+        self.parent_widget.image_layers[self.parent_widget.curr_layer].dim_idx = self.img_slicer.slicers_axisinfo['DIM_IDX'][
+            self.image_control.control_displayMode.currentIndex() - 1]
         # embed()
         try:
             self.parent_widget.image_layers[self.parent_widget.curr_layer].combos_idx = [ll.currentIndex() for ll in self.img_slicer.combos]
@@ -202,10 +208,8 @@ class FITSViewer(Viewer_Module):
         self.fits_current_field = self.image_control.control_dataField.currentText()
         self.fits_current_field_id = self.fits_fields_to_id[self.fits_current_field]
         if self.mapdict == {}:
-            # self.img_slicer = Slicer(self, self.fits_data[self.fits_current_field_id].data)
             self.img_slicer = Slicer(self, self.fits_data[self.fits_current_field_id].data, self.fits_data[self.fits_current_field_id].header)
         else:
-            # self.img_slicer = Slicer(self, self.mapdict['submc'][self.parent_widget.image_layers[self.parent_widget.curr_layer].idx].data)
             self.img_slicer = Slicer(self, self.mapdict['submc'][self.parent_widget.image_layers[self.parent_widget.curr_layer].idx].data,
                                      self.mapdict['submc'][self.parent_widget.image_layers[self.parent_widget.curr_layer].idx].header)
 
@@ -263,8 +267,7 @@ class FITSViewer(Viewer_Module):
             if (img_rotation > 0):
                 self.img_data = np.rot90(self.img_data, img_rotation)
 
-        self.imshow_args = {'cmap': cm.get_cmap(self.plot_settings['cmap']), 'norm': norm, 'interpolation': 'nearest',
-                            'origin': 'lower'}
+        self.imshow_args = {'cmap': cm.get_cmap(self.plot_settings['cmap']), 'norm': norm, 'interpolation': 'nearest', 'origin': 'lower'}
 
         if self.plot_settings['wcs']:
             try:
@@ -379,7 +382,8 @@ class FITSViewer(Viewer_Module):
                 self.ax_cb.set_ylabel('Wavelength [A]')
             else:
                 try:
-                    self.ax_cb.set_ylabel('{} [{}]'.format(self.img_slicer.header['CTYPE3'], self.spmap.meta['CUNIT3']))
+                    self.ax_cb.set_ylabel('{} [{}]'.format(self.plot_settings['slicers_axisinfo']['CTYPE'][self.plot_settings['dim_idx']],
+                                                           self.plot_settings['slicers_axisinfo']['CUNIT'][self.plot_settings['dim_idx']]))
                 except:
                     print('Telescope not recognized.')
         else:
@@ -408,18 +412,16 @@ class FITSViewer(Viewer_Module):
             self.plot_data = []
             # embed()
 
-            # nspw = self.img_slicer.slicers[-1].maximum() - self.img_slicer.slicers[-1].minimum()
-            nspw = self.img_slicer.header['NAXIS3']
-            #todo change the slicers [index] for the case of dim >3
+            naxis = self.plot_settings['slicers_axisinfo']['NAXIS'][self.plot_settings['dim_idx']]
             XX, YY = np.meshgrid(np.arange(self.spmap.data.shape[1]), np.arange(self.spmap.data.shape[0]))
             mesh = self.spmap.pixel_to_world(XX * u.pix, YY * u.pix)
             mapx, mapy = mesh.Tx.value, mesh.Ty.value
             levels = np.array([0.2, 1.0])
             cmap = cm.get_cmap(self.plot_settings['cmap'])
-            for s in range(nspw):
+            for s in range(naxis):
                 self.plot_data.append(
                     self.parent_widget.figure.axes.contourf(mapx, mapy, self.img_data[s, ...], levels=levels * np.nanmax(self.img_data[s, ...]),
-                                                            colors=[cmap(float(s + 1) / nspw)] * len(levels), alpha=0.25, antialiased=True))
+                                                            colors=[cmap(float(s + 1) / naxis)] * len(levels), alpha=0.25, antialiased=True))
                 # This is the fix for the white lines between contour levels
                 for cnt in self.plot_data[-1].collections:
                     cnt.set_edgecolor("face")
@@ -430,11 +432,11 @@ class FITSViewer(Viewer_Module):
                 self.parent_widget.figure.fig.delaxes(self.ax_cb)
             except:
                 pass
-            vmin = self.img_slicer.header['CRVAL3']
-            vmax = vmin + nspw*self.img_slicer.header['CDELT3']
+            vmin = self.plot_settings['slicers_axisinfo']['CRVAL'][self.plot_settings['dim_idx']]
+            vmax = vmin + naxis * self.plot_settings['slicers_axisinfo']['CDELT'][self.plot_settings['dim_idx']]
             if self.image_control.control_colorBar_check.isChecked():
                 self.plot_colorbar(custom_cb={'cmap': cm.get_cmap(self.plot_settings['cmap']), 'vmax': vmax, 'vmin': vmin})
-
+            self.img_slicer.slicers_widgets[self.plot_settings['dim_idx']].setDisabled(True)
         else:
             self.plot_data = self.parent_widget.figure.axes.imshow(self.img_data, **self.imshow_args)  # import pdb  # pdb.set_trace()
             # allways try to remove color bar first to avoid overplots when new Fits file is added
@@ -445,6 +447,8 @@ class FITSViewer(Viewer_Module):
 
             if self.image_control.control_colorBar_check.isChecked():
                 self.plot_colorbar()
+            for s in self.img_slicer.slicers_widgets:
+                s.setEnabled(True)
 
         self.parent_widget.figure.axes.format_coord = lambda x, y: '[ x = %.2f , y = %.2f ]' % (x, y)
         self.parent_widget.figure.axes.format_cursor_data = "x"

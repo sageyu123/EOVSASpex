@@ -24,14 +24,15 @@ class Slicer(object):
     parent_obj = None
     parent_layout = None
     data = None
-    raw_shape = None
-    raw_dim = None
+    shape_raw = None
+    dim_raw = None
     dim = -1
     data_slice = None
     slicers = None
     slicers_titles = None
     slicers_widgets = None
-    slice_idx = None
+    slicers_idx = None
+    slicers_axisinfo = None
 
     def __init__(self, parent_obj, array, header=None, squeeze=True):
 
@@ -40,8 +41,8 @@ class Slicer(object):
         # embed()
         self.parent_layout = parent_obj.image_control.slicer_group.layout()
         # self.parent_layout.setContentsMargins(0, 0, 0, 0)
-        self.raw_shape = array.shape
-        self.raw_dim = len(self.raw_shape)
+        self.shape_raw = array.shape
+        self.dim_raw = len(self.shape_raw)
         self.header = header
 
         if (squeeze):
@@ -51,6 +52,9 @@ class Slicer(object):
 
         self.dim = len(self.data.shape)
         print('dimensions:', self.dim)
+        self.slicers_axisinfo = {'DIM_RAW': self.dim_raw, 'NAXIS_RAW': [], 'CTYPE_RAW': [], 'CUNIT_RAW': [], 'CRVAL_RAW': [], 'CDELT_RAW': [],
+                                 'CRPIX_RAW': [], 'DIM_RAW_IDX': [], 'DIM': self.dim, 'NAXIS': [], 'CTYPE': [], 'CUNIT': [], 'CRVAL': [], 'CDELT': [],
+                                 'CRPIX': [], 'DIM_IDX': []}
 
         if (self.dim > 2):
             self.slicers_widgets = list()
@@ -61,12 +65,29 @@ class Slicer(object):
             self.combos = list()
             self.combos_titles = list()
             if header:
-                axisname = []
-                for i, s in enumerate(self.raw_shape):
+                for i, s in enumerate(self.shape_raw):
+                    self.slicers_axisinfo['NAXIS_RAW'].append(header['NAXIS{}'.format(self.dim_raw - i)])
+                    self.slicers_axisinfo['CTYPE_RAW'].append(header['CTYPE{}'.format(self.dim_raw - i)])
+                    self.slicers_axisinfo['CUNIT_RAW'].append(header['CUNIT{}'.format(self.dim_raw - i)])
+                    self.slicers_axisinfo['CRVAL_RAW'].append(header['CRVAL{}'.format(self.dim_raw - i)])
+                    self.slicers_axisinfo['CDELT_RAW'].append(header['CDELT{}'.format(self.dim_raw - i)])
+                    self.slicers_axisinfo['CRPIX_RAW'].append(header['CRPIX{}'.format(self.dim_raw - i)])
+                    self.slicers_axisinfo['DIM_RAW_IDX'].append(i)
                     if s > 1:
-                        axisname.append(header['CTYPE{}'.format(self.raw_dim - i)])
-                self.slicers_names = ['Dim {} of size [{}]'.format(axisname[i], limit) for i, limit in enumerate(self.data.shape)]
+                        self.slicers_axisinfo['NAXIS'].append(header['NAXIS{}'.format(self.dim_raw - i)])
+                        self.slicers_axisinfo['CTYPE'].append(header['CTYPE{}'.format(self.dim_raw - i)])
+                        self.slicers_axisinfo['CUNIT'].append(header['CUNIT{}'.format(self.dim_raw - i)])
+                        self.slicers_axisinfo['CRVAL'].append(header['CRVAL{}'.format(self.dim_raw - i)])
+                        self.slicers_axisinfo['CDELT'].append(header['CDELT{}'.format(self.dim_raw - i)])
+                        self.slicers_axisinfo['CRPIX'].append(header['CRPIX{}'.format(self.dim_raw - i)])
+                        self.slicers_axisinfo['DIM_IDX'].append(len(self.slicers_axisinfo['CRPIX']) - 1)
+                self.slicers_names = ['Dim {} of size [{}]'.format(self.slicers_axisinfo['CTYPE'][i], limit) for i, limit in
+                                      enumerate(self.data.shape)]
             else:
+                self.slicers_axisinfo['NAXIS_RAW'] = list(self.shape_raw)
+                self.slicers_axisinfo['DIM_RAW_IDX'] = [i for i in range(self.dim_raw)]
+                self.slicers_axisinfo['NAXIS'] = list(self.shape)
+                self.slicers_axisinfo['DIM_IDX'] = [i for i in range(self.dim)]
                 self.slicers_names = ['Dim {} of size [{}]'.format(i, limit) for i, limit in enumerate(self.data.shape)]
             # clear the layout to avoid overlaying when new widget is added
             self.clearLayout(self.parent_layout)
@@ -97,9 +118,9 @@ class Slicer(object):
             for i, s in enumerate(self.slicers):
                 s.valueChanged[int].connect(self.update_slice)
 
-            self.slice_idx = [slice(None)] * self.dim
+            self.slicers_idx = [slice(None)] * self.dim
             for ll in range(self.dim - 2):
-                self.slice_idx[ll] = 0
+                self.slicers_idx[ll] = 0
         elif self.dim == 2:
             self.data_slice = self.data
         else:
@@ -109,7 +130,7 @@ class Slicer(object):
             self.data_slice = np.flipud(self.nope)
 
         # self.parent_ui.control_dim3.setRange(0,self.data.shape[-1]-1)
-        self.parent_ui.groupBox_dataField.setTitle('Data Field of size: ' + self.shape_to_str(self.raw_shape))
+        self.parent_ui.groupBox_dataField.setTitle('Data Field of size: ' + self.shape_to_str(self.shape_raw))
 
         pass
 
@@ -132,17 +153,18 @@ class Slicer(object):
         # who = self.parent_ui.sender()
         dim = str(who.objectName())
         print(text, dim)  # print('Value %d for dim %s' % (text, dim))
+        ## currently not implemented
 
     def update_slice(self, value):
         who = self.parent_ui.sender()
         dim = int(who.objectName())
         print('Value %d for dim %d' % (value, dim))
-        slice_idx = list(self.slice_idx)
+        slice_idx = list(self.slicers_idx)
         slice_idx[dim] = value
         slice_idx = tuple(slice_idx)
         print(slice_idx)
-        dim_the_same = ([type(x) for x in slice_idx] == [type(x) for x in self.slice_idx])
-        self.slice_idx = slice_idx
+        dim_the_same = ([type(x) for x in slice_idx] == [type(x) for x in self.slicers_idx])
+        self.slicers_idx = slice_idx
         if (dim_the_same):
             self.parent_obj.update_plot()  # just update
             print('update_plot')
@@ -156,7 +178,7 @@ class Slicer(object):
 
     def get_slice(self, nans_free=False):
         if (self.dim > 2):
-            self.data_slice = self.data[self.slice_idx]
+            self.data_slice = self.data[self.slicers_idx]
 
         if (nans_free):
             self.data_slice = self.data_slice[np.isnan(self.data_slice)] = np.nanmin(self.data_slice)
