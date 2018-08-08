@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>867</width>
-    <height>666</height>
+    <width>1023</width>
+    <height>775</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -35,7 +35,7 @@
      <height>200</height>
     </size>
    </property>
-   <layout class="QGridLayout" name="gridLayout_2">
+   <layout class="QVBoxLayout" name="verticalLayout_3">
     <property name="leftMargin">
      <number>0</number>
     </property>
@@ -48,33 +48,27 @@
     <property name="bottomMargin">
      <number>0</number>
     </property>
-    <item row="0" column="0">
+    <item>
      <widget class="QSplitter" name="splitter">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
       <widget class="QWidget" name="controlWidget" native="true">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
        <property name="minimumSize">
         <size>
-         <width>280</width>
-         <height>0</height>
+         <width>315</width>
+         <height>400</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>350</width>
+         <width>500</width>
          <height>16777215</height>
         </size>
        </property>
@@ -86,7 +80,7 @@
          <number>0</number>
         </property>
         <property name="rightMargin">
-         <number>0</number>
+         <number>5</number>
         </property>
         <property name="bottomMargin">
          <number>0</number>
@@ -101,8 +95,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>348</width>
-             <height>591</height>
+             <width>493</width>
+             <height>700</height>
             </rect>
            </property>
            <layout class="QGridLayout" name="gridLayout_8">
@@ -110,10 +104,10 @@
              <number>0</number>
             </property>
             <property name="topMargin">
-             <number>0</number>
+             <number>2</number>
             </property>
             <property name="rightMargin">
-             <number>0</number>
+             <number>3</number>
             </property>
             <property name="bottomMargin">
              <number>0</number>
@@ -138,7 +132,7 @@
                  <number>0</number>
                 </property>
                 <property name="topMargin">
-                 <number>0</number>
+                 <number>5</number>
                 </property>
                 <property name="rightMargin">
                  <number>0</number>
@@ -149,6 +143,143 @@
                 <property name="horizontalSpacing">
                  <number>-1</number>
                 </property>
+                <item row="2" column="0">
+                 <widget class="QGroupBox" name="groupBox_image_control">
+                  <property name="title">
+                   <string>Image Control</string>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_2">
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>2</number>
+                   </property>
+                   <item>
+                    <widget class="QComboBox" name="control_image_type_3">
+                     <item>
+                      <property name="text">
+                       <string>No difference images</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Running difference</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Running difference Ratio</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Base difference</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Base difference Ratio</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QGroupBox" name="groupBox_image_layers">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="title">
+                   <string>Image Layer</string>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayout">
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>4</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>4</number>
+                   </property>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout">
+                     <item>
+                      <widget class="QPushButton" name="NewLayer">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="minimumSize">
+                        <size>
+                         <width>127</width>
+                         <height>32</height>
+                        </size>
+                       </property>
+                       <property name="text">
+                        <string>New Layer</string>
+                       </property>
+                       <property name="icon">
+                        <iconset>
+                         <normaloff>icon/plus-symbol-button.svg</normaloff>icon/plus-symbol-button.svg</iconset>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <spacer name="horizontalSpacer_2">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeType">
+                        <enum>QSizePolicy::MinimumExpanding</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>150</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <widget class="QScrollArea" name="scrollArea">
+                     <property name="widgetResizable">
+                      <bool>true</bool>
+                     </property>
+                     <widget class="QWidget" name="LayerlistBox">
+                      <property name="geometry">
+                       <rect>
+                        <x>0</x>
+                        <y>0</y>
+                        <width>453</width>
+                        <height>483</height>
+                       </rect>
+                      </property>
+                     </widget>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
                 <item row="0" column="0">
                  <widget class="QGroupBox" name="groupBox_movie_controls">
                   <property name="sizePolicy">
@@ -165,22 +296,15 @@
                     <number>0</number>
                    </property>
                    <property name="topMargin">
-                    <number>0</number>
+                    <number>2</number>
                    </property>
                    <property name="rightMargin">
                     <number>0</number>
                    </property>
                    <property name="bottomMargin">
-                    <number>0</number>
+                    <number>2</number>
                    </property>
-                   <item row="0" column="0" colspan="5">
-                    <widget class="QSlider" name="Slider_frame">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="0">
+                   <item row="2" column="0">
                     <widget class="QPushButton" name="btn_prev">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -212,39 +336,21 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="1" column="1">
-                    <widget class="QPushButton" name="btn_play">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="minimumSize">
-                      <size>
-                       <width>30</width>
-                       <height>30</height>
-                      </size>
-                     </property>
-                     <property name="maximumSize">
-                      <size>
-                       <width>30</width>
-                       <height>30</height>
-                      </size>
-                     </property>
-                     <property name="statusTip">
-                      <string>Play movie</string>
-                     </property>
-                     <property name="text">
-                      <string/>
-                     </property>
-                     <property name="icon">
-                      <iconset>
-                       <normaloff>icon/right-arrow.svg</normaloff>icon/right-arrow.svg</iconset>
+                   <item row="0" column="0" colspan="5">
+                    <widget class="QSlider" name="Slider_frame">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
                      </property>
                     </widget>
                    </item>
-                   <item row="1" column="2">
+                   <item row="2" column="4">
+                    <widget class="QLabel" name="label_frame">
+                     <property name="text">
+                      <string/>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="2">
                     <widget class="QPushButton" name="btn_next">
                      <property name="enabled">
                       <bool>true</bool>
@@ -282,7 +388,39 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="1" column="3">
+                   <item row="2" column="1">
+                    <widget class="QPushButton" name="btn_play">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="minimumSize">
+                      <size>
+                       <width>30</width>
+                       <height>30</height>
+                      </size>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>30</width>
+                       <height>30</height>
+                      </size>
+                     </property>
+                     <property name="statusTip">
+                      <string>Play movie</string>
+                     </property>
+                     <property name="text">
+                      <string/>
+                     </property>
+                     <property name="icon">
+                      <iconset>
+                       <normaloff>icon/right-arrow.svg</normaloff>icon/right-arrow.svg</iconset>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="3">
                     <spacer name="horizontalSpacer">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
@@ -292,172 +430,11 @@
                      </property>
                      <property name="sizeHint" stdset="0">
                       <size>
-                       <width>91</width>
+                       <width>120</width>
                        <height>12</height>
                       </size>
                      </property>
                     </spacer>
-                   </item>
-                   <item row="1" column="4">
-                    <widget class="QLabel" name="label_frame">
-                     <property name="text">
-                      <string/>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QGroupBox" name="groupBox_image_layers">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="title">
-                   <string>Image Layer</string>
-                  </property>
-                  <layout class="QGridLayout" name="gridLayout_9">
-                   <property name="leftMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
-                   <item row="0" column="0">
-                    <layout class="QGridLayout" name="gridLayout_3">
-                     <item row="0" column="1">
-                      <spacer name="horizontalSpacer_2">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeType">
-                        <enum>QSizePolicy::MinimumExpanding</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>60</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                     <item row="0" column="0">
-                      <widget class="QPushButton" name="NewLayer">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="minimumSize">
-                        <size>
-                         <width>120</width>
-                         <height>30</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string>New Layer</string>
-                       </property>
-                       <property name="icon">
-                        <iconset>
-                         <normaloff>icon/plus-symbol-button.svg</normaloff>icon/plus-symbol-button.svg</iconset>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="1" column="0" colspan="2">
-                      <widget class="QScrollArea" name="scrollArea_4">
-                       <property name="widgetResizable">
-                        <bool>true</bool>
-                       </property>
-                       <widget class="QWidget" name="scrollAreaWidgetContents_4">
-                        <property name="geometry">
-                         <rect>
-                          <x>0</x>
-                          <y>0</y>
-                          <width>304</width>
-                          <height>393</height>
-                         </rect>
-                        </property>
-                        <layout class="QGridLayout" name="gridLayout_4">
-                         <property name="leftMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="topMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="rightMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="bottomMargin">
-                          <number>0</number>
-                         </property>
-                         <item row="0" column="0">
-                          <widget class="QTableWidget" name="ImageLayer_Table"/>
-                         </item>
-                        </layout>
-                       </widget>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QGroupBox" name="groupBox_image_control">
-                  <property name="title">
-                   <string>Image Control</string>
-                  </property>
-                  <layout class="QVBoxLayout" name="verticalLayout_2">
-                   <property name="leftMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
-                   <item>
-                    <widget class="QComboBox" name="control_image_type_3">
-                     <item>
-                      <property name="text">
-                       <string>No difference images</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>Running difference</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>Running difference Ratio</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>Base difference</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>Base difference Ratio</string>
-                      </property>
-                     </item>
-                    </widget>
                    </item>
                   </layout>
                  </widget>
@@ -498,7 +475,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>867</width>
+     <width>1023</width>
      <height>22</height>
     </rect>
    </property>

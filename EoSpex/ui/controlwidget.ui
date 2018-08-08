@@ -603,7 +603,7 @@
                   <number>0</number>
                  </property>
                  <item row="0" column="0">
-                  <widget class="QTableWidget" name="ImageLayer_Table"/>
+                  <widget class="QTableWidget" name="ImageLayer_List"/>
                  </item>
                 </layout>
                </widget>
