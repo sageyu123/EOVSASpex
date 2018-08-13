@@ -21,7 +21,7 @@ from PyQt5.QtGui import QIcon, QStandardItemModel, QStandardItem
 from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from suncasa.utils import DButil
+from utils import utils
 
 myFolder = os.path.split(os.path.realpath(__file__))[0]
 sys.path = [myFolder, os.path.join(myFolder, 'widgets')] + sys.path
@@ -29,7 +29,6 @@ os.chdir(myFolder)
 
 from utils import module_manager
 from utils.module_class import Viewer_Module
-from utils.layer_class import Layer, LyManager
 
 # --- Warnigs setup
 
@@ -66,26 +65,24 @@ help_message = '''
 '''
 
 
-
-
 def FitSlit(xx, yy, cutwidth, cutang, cutlength, s=None, method='Polyfit'):
     # if len(xx) <= 3 or method == 'Polyfit':
     #     '''polynomial fit'''
-    out = DButil.polyfit(xx, yy, cutlength, len(xx) - 1 if len(xx) <= 3 else 2)
+    out = utils.polyfit(xx, yy, cutlength, len(xx) - 1 if len(xx) <= 3 else 2)
     xs, ys, posangs = out['xs'], out['ys'], out['posangs']
     # else:
     #     if method == 'Param_Spline':
     #         '''parametic spline fit'''
-    #         out = DButil.paramspline(xx, yy, cutlength, s=s)
+    #         out = utils.paramspline(xx, yy, cutlength, s=s)
     #         xs, ys, posangs = out['xs'], out['ys'], out['posangs']
     #     else:
     #         '''spline fit'''
-    #         out = DButil.spline(xx, yy, cutlength, s=s)
+    #         out = utils.spline(xx, yy, cutlength, s=s)
     #         xs, ys, posangs = out['xs'], out['ys'], out['posangs']
     # if not ascending and (fitmethod != 'Param_Spline' or len(xx) <= 3):
     #     xs, ys = xs[::-1], ys[::-1]
     #     posangs = posangs[::-1]
-    dist = DButil.findDist(xs, ys)
+    dist = utils.findDist(xs, ys)
     dists = np.cumsum(dist)
     posangs2 = posangs + np.pi / 2
     cutwidths = dists * np.tan(cutang) + cutwidth
@@ -127,12 +124,10 @@ def getimprofile(data, cutslit, xrange=None, yrange=None):
             ys0 = cutslit['ys0']
             ys1 = cutslit['ys1']
         for ll in range(num):
-            inten = DButil.improfile(data, [xs0[ll], xs1[ll]], [ys0[ll], ys1[ll]], interp='nearest')
+            inten = utils.improfile(data, [xs0[ll], xs1[ll]], [ys0[ll], ys1[ll]], interp='nearest')
             intens[ll] = np.mean(inten)
         intensdist = {'x': cutslit['dist'], 'y': intens}
         return intensdist
-
-
 
 
 class NaviToolbar(NavigationToolbar):
@@ -274,7 +269,6 @@ class MainWindow(QMainWindow):
         self.slitline0, = self.figure.axes.plot([], [], color='white', ls='dotted')
         self.slitline1, = self.figure.axes.plot([], [], color='white', ls='dotted')
 
-
         # --- check which modules are avaible
         for module_name, module_handle in avaible_modules.items():
             self.registerModule(module_name, module_handle)
@@ -282,7 +276,6 @@ class MainWindow(QMainWindow):
             self.main_ui.menuModules.addAction(QAction(module_name, self))
 
         self.show()
-
 
     def registerModule(self, module_name, module_handle):
         module_class = getattr(module_handle, module_name)
@@ -292,24 +285,20 @@ class MainWindow(QMainWindow):
 
         self.loaded_modules[module_name] = module_instance
 
-    def plot(self):
-        if self.active_module is not None:
-            self.active_module.plot()
+    # def plot(self):
+    #     if self.active_module is not None:
+    #         self.active_module.plot_initi()
+    #
+    # def update_plot(self):
+    #     if self.active_module is not None:
+    #         self.active_module.plot_update()
 
-    def update_plot(self):
-        if self.active_module is not None:
-            self.active_module.update_plot()
-
-    def update_data(self):
-        if self.active_module is not None:
-            self.active_module.update_data()
-            self.active_module.update_plot()
 
     def openByFileName(self, path, fast=False):
         self.statusbar.showMessage("Opening [{}] file!".format(path))
         if fast:
             self.active_module.open_file(path)
-            self.update_plot()
+            # self.update_plot()
         else:
             extension = os.path.splitext(path[0])[1]
             if extension in self.file_extension_to_module_name:
@@ -323,7 +312,7 @@ class MainWindow(QMainWindow):
                     self.setActiveModule(self.loaded_modules[module_names[0]])
                     self.active_module.show_gui()
                     self.active_module.open_file(path)
-                    self.plot()
+                    # self.plot()
             else:
                 self.statusbar.showMessage("No module to deal with [{}] file!".format(path))
 
@@ -364,84 +353,18 @@ class MainWindow(QMainWindow):
             self.openByFileName(paths)
             self.signalDisconnect(self.Slider_frame.valueChanged[int], self.Slider_frame_handler)
             self.Slider_frame.setMinimum(1)
-            self.Slider_frame.setMaximum(self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].nidx)
+            self.Slider_frame.setMaximum(
+                self.active_module.layermanger.image_layers[self.active_module.layermanger.curr_layer].nidx)
             self.Slider_frame.setValue(1)
             self.Slider_frame.valueChanged[int].connect(self.Slider_frame_handler)
             self.label_frame.setText(
-                '{}/{}'.format(self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].frame_idx + 1, self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].nidx))
-            self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].telescope = \
-                self.active_module.fits_data[self.active_module.fits_current_field_id].header['TELESCOP']
-            self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].drange = [np.nanmin(self.active_module.img_data),
-                                              np.nanmax(self.active_module.img_data)]
-            qc = self.active_module.image_control.control_colors_list
-            allitems = []
-            if self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].telescope == 'SDO/AIA':
-                for ll in range(qc.count()):
-                    allitems.append(qc.itemText(ll))
-                aia_cmap = "sdoaia{}".format(
-                    self.active_module.fits_data[self.active_module.fits_current_field_id].header['WAVELNTH'])
-                allitems = [aia_cmap] + allitems
-            else:
-                for ll in range(qc.count()):
-                    if 'sdoaia' not in qc.itemText(ll):
-                        allitems.append(qc.itemText(ll))
-            allitems = sorted(allitems)
-            qc.clear()
-            qc.addItems(allitems)
-            if self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].telescope == 'SDO/AIA':
-                qc.setCurrentText(aia_cmap)
-            else:
-                qc.setCurrentText('jet')
+                '{}/{}'.format(self.active_module.layermanger.image_layers[
+                                   self.active_module.layermanger.curr_layer].frame_idx + 1,
+                               self.active_module.layermanger.image_layers[
+                                   self.active_module.layermanger.curr_layer].nidx))
 
-            ## update dynamic range, plot the image
-            drange = self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].drange
-            dmin, dmax = self.active_module.drange_normalize(drange=drange)
-            dstep = (dmax - dmin)
-            self.active_module.image_control.Slider_dmin_GBox.setTitle(
-                'dmin [{0:.0f}~{1:.0f}] --> {0:.0f}'.format(drange[0], drange[1]))
-            self.active_module.image_control.Slider_dmin.setMinimum(dmin)
-            self.active_module.image_control.Slider_dmin.setMaximum(dmax)
-            self.active_module.image_control.Slider_dmin.setSingleStep(dstep)
-            self.active_module.image_control.Slider_dmin.setValue(dmin)
-            self.active_module.slider_dmin_value = dmin
-
-            self.active_module.image_control.Slider_dmax_GBox.setTitle(
-                'dmax [{0:.2e}~{1:.2e}] --> {0:.2e}'.format(drange[0], drange[1]))
-            self.active_module.image_control.Slider_dmax.setMinimum(dmin)
-            self.active_module.image_control.Slider_dmax.setMaximum(dmax)
-            self.active_module.image_control.Slider_dmax.setSingleStep(dstep)
-            self.active_module.image_control.Slider_dmax.setValue(dmax)
-            self.active_module.slider_dmax_value = dmax
-
-            self.signalDisconnect(self.active_module.image_control.Slider_dmin.valueChanged,
-                                  self.active_module.update_plot)
-            self.signalDisconnect(self.active_module.image_control.Slider_dmax.valueChanged,
-                                  self.active_module.update_plot)
-            if self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].telescope == 'SDO/AIA':
-                self.signalDisconnect(self.active_module.image_control.control_log_check.stateChanged,
-                                      self.active_module.update_plot)
-                self.active_module.image_control.control_log_check.setChecked(True)
-                self.signalConnect(self.active_module.image_control.control_log_check.stateChanged,
-                                   self.active_module.update_plot)
-                clrange = DButil.sdo_aia_scale_dict(
-                    wavelength=self.active_module.fits_data[self.active_module.fits_current_field_id].header[
-                        'WAVELNTH'])
-                print('default color normalization:', clrange)
-                # embed()
-                self.active_module.image_control.Slider_dmin.setValue(clrange['low'])
-                self.active_module.image_control.Slider_dmax.setValue(clrange['high'])
-                self.active_module.image_control.Slider_dmin.parent().setTitle(
-                    '{0} [{1[0]:.0f}~{1[1]:.0f}] --> {2:.0f}'.format('dmin', self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].drange,
-                                                                     clrange['low']))
-                self.active_module.image_control.Slider_dmax.parent().setTitle(
-                    '{0} [{1[0]:.0f}~{1[1]:.0f}] --> {2:.0f}'.format('dmax', self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].drange,
-                                                                     clrange['high']))
-            self.signalConnect(self.active_module.image_control.Slider_dmin.valueChanged,
-                               self.active_module.update_plot)
-            self.signalConnect(self.active_module.image_control.Slider_dmax.valueChanged,
-                               self.active_module.update_plot)
             self.actionLoadChunk.triggered.connect(self.active_module.LoadChunk_handler)
-            self.active_module.update_plot()
+            # self.active_module.plot_update()
         elif os.path.isdir(path):
             self.statusbar.showMessage("File type error (unknown extension)")  # print(paths)
 
@@ -459,8 +382,9 @@ class MainWindow(QMainWindow):
 
     def testaction(self):
         stackplt = []
-        for idx, ll in enumerate(self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].url):
-            self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].frame_idx = idx
+        for idx, ll in enumerate(
+                self.active_module.layermanger.image_layers[self.active_module.layermanger.curr_layer].url):
+            self.active_module.layermanger.image_layers[self.active_module.layermanger.curr_layer].frame_idx = idx
             self.Slider_frame.setValue(idx + 1)
             intens = getimprofile(self.active_module.img_data, cutslitplt,
                                   xrange=list(self.active_module.spmap.xrange.value),
@@ -474,29 +398,34 @@ class MainWindow(QMainWindow):
         plt.show()
 
     def btn_next_click(self):
-        if self.active_module.lymanger.curr_layer is not None:
-            idx = self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].frame_idx
+        if self.active_module.layermanger.curr_layer is not None:
+            idx = self.active_module.layermanger.image_layers[self.active_module.layermanger.curr_layer].frame_idx
             idx += 1
-            idx = idx % self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].nidx
-            self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].frame_idx = idx
+            idx = idx % self.active_module.layermanger.image_layers[self.active_module.layermanger.curr_layer].nidx
+            self.active_module.layermanger.image_layers[self.active_module.layermanger.curr_layer].frame_idx = idx
             self.Slider_frame.setValue(idx + 1)
 
     def btn_prev_click(self):
-        if self.active_module.lymanger.curr_layer is not None:
-            idx = self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].frame_idx
+        if self.active_module.layermanger.curr_layer is not None:
+            idx = self.active_module.layermanger.image_layers[self.active_module.layermanger.curr_layer].frame_idx
             idx -= 1
-            idx = idx % self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].nidx
-            self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].frame_idx = idx
+            idx = idx % self.active_module.layermanger.image_layers[self.active_module.layermanger.curr_layer].nidx
+            self.active_module.layermanger.image_layers[self.active_module.layermanger.curr_layer].frame_idx = idx
             self.Slider_frame.setValue(idx + 1)
 
     def Slider_frame_handler(self, value):
-        if self.active_module.lymanger.curr_layer is not None:
-            self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].frame_idx = value - 1
-            self.label_frame.setText('{}/{}'.format(value, self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].nidx))
+        if self.active_module.layermanger.curr_layer is not None:
+            self.active_module.layermanger.image_layers[self.active_module.layermanger.curr_layer].frame_idx = value - 1
+            self.label_frame.setText('{}/{}'.format(value, self.active_module.layermanger.image_layers[
+                self.active_module.layermanger.curr_layer].nidx))
             if 'mapdict' in dir(self.active_module):
-                self.openByFileName(self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].url[value - 1], fast=True)
+                self.openByFileName(
+                    self.active_module.layermanger.image_layers[self.active_module.layermanger.curr_layer].url[
+                        value - 1], fast=True)
             else:
-                self.openByFileName(self.active_module.lymanger.image_layers[self.active_module.lymanger.curr_layer].url[value - 1])
+                self.openByFileName(
+                    self.active_module.layermanger.image_layers[self.active_module.layermanger.curr_layer].url[
+                        value - 1])
             self.slit_handler(checked=self.actionslit.isChecked())
 
     def onclick_handler(self, event=None):

@@ -282,54 +282,12 @@
       <property name="bottomMargin">
        <number>0</number>
       </property>
-      <item row="3" column="0" colspan="2">
-       <widget class="QCheckBox" name="control_colorNorm_check">
-        <property name="text">
-         <string>Color Normalize</string>
-        </property>
-        <property name="checked">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="control_wcs_check">
-        <property name="text">
-         <string>WCS</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="0">
        <widget class="QCheckBox" name="control_colorBar_check">
         <property name="text">
          <string>Color Bar</string>
         </property>
         <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2" rowspan="4">
-       <widget class="QDial" name="rotate_dial">
-        <property name="maximum">
-         <number>3</number>
-        </property>
-        <property name="pageStep">
-         <number>1</number>
-        </property>
-        <property name="sliderPosition">
-         <number>0</number>
-        </property>
-        <property name="tracking">
-         <bool>true</bool>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="notchesVisible">
          <bool>true</bool>
         </property>
        </widget>
@@ -348,22 +306,34 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QCheckBox" name="control_SolarGrid_check">
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="control_colorNorm_check">
         <property name="text">
-         <string>Solar Grid</string>
+         <string>Color Normalize</string>
         </property>
         <property name="checked">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
-       <widget class="QCheckBox" name="control_SolarLimb_check">
-        <property name="text">
-         <string>Solar Limb</string>
+      <item row="0" column="2" rowspan="2">
+       <widget class="QDial" name="rotate_dial">
+        <property name="maximum">
+         <number>3</number>
         </property>
-        <property name="checked">
+        <property name="pageStep">
+         <number>1</number>
+        </property>
+        <property name="sliderPosition">
+         <number>0</number>
+        </property>
+        <property name="tracking">
+         <bool>true</bool>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="notchesVisible">
          <bool>true</bool>
         </property>
        </widget>

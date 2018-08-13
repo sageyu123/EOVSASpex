@@ -1,11 +1,7 @@
-from PyQt5 import Qt
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
-
-from IPython import embed
-
 import numpy as np
-import os
+from IPython import embed
 
 
 class Slicer(object):
@@ -34,13 +30,15 @@ class Slicer(object):
     slicers_idx = None
     slicers_axisinfo = None
 
-    def __init__(self, parent_obj, array, header=None, squeeze=True):
+    def __init__(self, parent_obj, squeeze=True):
 
         self.parent_obj = parent_obj
         self.parent_ui = parent_obj.image_control
         # embed()
         self.parent_layout = parent_obj.image_control.slicer_group.layout()
         # self.parent_layout.setContentsMargins(0, 0, 0, 0)
+        array = parent_obj.fits_data[parent_obj.fits_current_field_id].data
+        header = parent_obj.fits_data[parent_obj.fits_current_field_id].header
         self.shape_raw = array.shape
         self.dim_raw = len(self.shape_raw)
         self.header = header
@@ -166,12 +164,12 @@ class Slicer(object):
         dim_the_same = ([type(x) for x in slice_idx] == [type(x) for x in self.slicers_idx])
         self.slicers_idx = slice_idx
         if (dim_the_same):
-            self.parent_obj.update_plot()  # just update
+            self.parent_obj.plot_update()  # just update
             print('update_plot')
         else:
             # embed()
             print('plot')
-            self.parent_obj.plot()
+            self.parent_obj.plot_initi()
         pass
         # Set title on bar
         self.slicers_widgets[self.slicers_widgets_idx[dim]].setTitle(self.slicers_titles[self.slicers_widgets_idx[dim]] % value)
