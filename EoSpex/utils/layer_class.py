@@ -58,16 +58,22 @@ class LayerList(QListView):
         self.setMaximumSize(QtCore.QSize(1000, 1000))
         self.model = QStandardItemModel(self)
         self.setModel(self.model)
-
+        self.image_layers = None
         # embed()
 
     def dragLeaveEvent(self, event):
         selectedIdx = self.selectedIndexes()[0].row()
-        print('remove item ', self.model.item(selectedIdx).text())
+        print('remove item ', self.model.item(selectedIdx).whatsThis())
+        self.image_layers[self.model.item(selectedIdx).whatsThis()].destroy()
+        del self.image_layers[self.model.item(selectedIdx).whatsThis()]
         self.model.removeRow(selectedIdx)
 
-        # def dropEvent(self, event):
-        #     embed()
+    # def dropEvent(self, event):
+    #     selectedIdx = self.selectedIndexes()[0].row()
+    #     print('move item ', self.model.item(selectedIdx).whatsThis())
+    #     self.dropIndicatorPosition()
+    #     # embed()
+    #     self.model.moveRow(self.model.item(selectedIdx).index(),1,self.model.item(self.dropIndicatorPosition()-1).index(),1)
 
 
 class Layer:
@@ -116,6 +122,33 @@ class Layer:
         else:
             self.category = 'attribute'
         self.zorder = 0
+
+
+    def get_zorder(self):
+        if self.im:
+            if type(self.im) is list:
+                if isinstance(self.im[0], QuadContourSet):
+                    self.zorder=self.im[0].collections[0].get_zorder()
+                else:
+                    self.zorder = self.im[0].get_zorder()
+            else:
+                self.zorder = self.im.get_zorder()
+        return self.zorder
+
+
+    def set_zorder(self,zorder=1):
+        if self.im:
+            if type(self.im) is list:
+                for im in self.im:
+                    if isinstance(im, QuadContourSet):
+                        for col in im.collections:
+                            col.set_zorder(zorder)
+                    else:
+                        im.set_zorder(zorder)
+            else:
+                self.zorder = self.im.set_zorder(zorder)
+        return self.zorder
+
 
     def readfits(self, url=None):
         self.fits_data = fits.open(url)
@@ -190,8 +223,7 @@ class Layer:
                 except:
                     print('Telescope not recognized.')
 
-
-    def toggle_colorbar(self,s):
+    def toggle_colorbar(self, s):
         self.im_cbar.ax.set_visible(bool(s))
         self.axes.figure.canvas.draw_idle()
 
@@ -262,15 +294,17 @@ class Layer:
 
         if who is not None:
             if who.objectName() == 'control_displayMode':
+                # embed()
                 if type(self.im) is list:
                     for col in self.im:
                         if isinstance(col, QuadContourSet):
-                            col.collections.clear()
+                            for c in col.collections:
+                                c.remove()
                         else:
                             col.remove()
                 else:
                     self.im.remove()
-            self.im=[]
+                self.im = []
 
         # self.reset_plot(who=who)
         # self.axes.cla()
@@ -363,9 +397,6 @@ class Layer:
                 self.axes.set_xlim(zoom_fov[:2])
                 self.axes.set_ylim(zoom_fov[2:])
             self.axes.figure.canvas.draw()
-
-    def clear_plot(self):
-        pass
 
     def drange_normalize(self, drange=None, data_in=None, reverse=False):
         ## normalize the data dynamic range to 1~100
@@ -597,8 +628,30 @@ class Layer:
         drange = self.drange
         who.parent().setTitle(
             '{} [{:.2e}~{:.2e}] --> {:.2e}'.format(who.objectName()[-4:], drange[0], drange[1],
-                                                   self.drange_normalize(data_in=[who.value()][0],
-                                                                         reverse=True)))
+                                                   self.drange_normalize(data_in=[who.value()][0], reverse=True)))
+
+    def clear_plot(self):
+        # embed()
+        if self.im:
+            if type(self.im) is list:
+                for col in self.im:
+                    if isinstance(col, QuadContourSet):
+                        # col.collections.clear()
+                        for c in col.collections:
+                            c.remove()
+                    else:
+                        col.remove()
+            else:
+                self.im.remove()
+        try:
+            self.im_cbar.remove()
+        except:
+            pass
+        self.axes.figure.canvas.draw_idle()
+
+    def destroy(self):
+        self.clear_plot()
+        self.image_control.destroy()
 
     @property
     def info(self):
@@ -648,13 +701,13 @@ class Layer_Grid:
             l0 = self.parent.spmap.heliographic_longitude.to(u.deg)
             hg_longitude_deg = np.linspace(-90, 90, num=91) * u.deg
             hg_latitude_deg = np.arange(-90, 90, grid_spacing.to(u.deg).value) * u.deg
-            # zorder = max([_.zorder for _ in self.axes.get_children()]) + 1000
+            zorder = max([_.zorder for _ in self.axes.get_children()]) + 1000
             # zorder=None
             for lat in hg_latitude_deg:
                 c = hgs2hcc(rsun, hg_longitude_deg, lat * np.ones(91), b0, l0)
                 coords = hcc2hpc(c[0], c[1], c[2], dsun)
                 self.im += self.axes.plot(coords[0].to(u.arcsec), coords[1].to(u.arcsec), linewidth=0.5,
-                                          alpha=self.alpha, color=self.color, linestyle='--')
+                                          alpha=self.alpha, color=self.color, linestyle='--', zorder=zorder)
 
             hg_longitude_deg = np.arange(-90, 90, grid_spacing.to(u.deg).value) * u.deg
             hg_latitude_deg = np.linspace(-90, 90, num=91) * u.deg
@@ -663,13 +716,25 @@ class Layer_Grid:
                 c = hgs2hcc(rsun, lon * np.ones(91), hg_latitude_deg, b0, l0)
                 coords = hcc2hpc(c[0], c[1], c[2], dsun)
                 self.im += self.axes.plot(coords[0].to(u.arcsec), coords[1].to(u.arcsec), linewidth=0.5,
-                                          alpha=self.alpha, color=self.color, linestyle='--')
+                                          alpha=self.alpha, color=self.color, linestyle='--', zorder=zorder)
 
-    def clear_plot(self):
+    def hide_plot(self):
         if self.im:
             for col in self.im:
                 for cl in col:
                     cl.set_visible(False)
+
+    def get_zorder(self):
+        if self.im:
+            if type(self.im) is list:
+                if isinstance(self.im[0], QuadContourSet):
+                    self.zorder=self.im[0].collections[0].get_zorder()
+                else:
+                    self.zorder = self.im[0].get_zorder()
+            else:
+                self.zorder = self.im.get_zorder()
+        return self.zorder
+
 
     @property
     def info(self):
@@ -691,16 +756,16 @@ class Layer_Limb(Layer_Grid):
                 for cl in col:
                     cl.set_visible(True)
         else:
-            # zorder = max([_.zorder for _ in self.axes.get_children()]) + 1000
+            zorder = max([_.zorder for _ in self.axes.get_children()]) + 1000
             rsun = self.parent.spmap.rsun_obs
             phi = np.linspace(-180, 180, num=181) * u.deg
             x = np.cos(phi) * rsun
             y = np.sin(phi) * rsun
             self.im += self.axes.plot(x, y, linewidth=0.5, alpha=self.alpha, color=self.color,
-                                      linestyle='-')
+                                      linestyle='-', zorder=zorder)
         print(self, self.im)
 
-    def clear_plot(self):
+    def hide_plot(self):
         if self.im:
             for col in self.im:
                 for cl in col:
@@ -738,11 +803,34 @@ class LayerManager:
         item.setCheckState(Qt.Unchecked)
         item.setWhatsThis('solarlimb')
         self.List.model.appendRow(item)
+        self.zorders=[]
 
         self.List.model.itemChanged.connect(self.checkStateChange)
+        # self.List.rowsAboutToBeRemoved.connect(self.rowsMove)
         # self.List.clicked.connect(self.click)
+        # embed()
         self.List.doubleClicked.connect(self.doubleclick)
         # self.List.indexesMoved.connect(self.delete)
+
+    def get_zorders(self):
+        self.zorders=[]
+        for k, v in self.image_layers.items():
+            if isinstance(v, Layer):
+                self.zorders.append(v.get_zorder())
+        return self.zorders
+
+    def set_zorders(self):
+        layers=[]
+        model=self.List.model
+        for idx in range(model.rowCount()):
+            layer_id = model.item(idx).whatsThis()
+            if isinstance(self.image_layers[layer_id], Layer):
+                layers.append(self.image_layers[layer_id])
+        self.zorders=np.arange(len(layers))[::-1]+1
+        for idx,ly in enumerate(layers):
+            ly.set_zorder(self.zorders[idx])
+        self.fig.canvas.draw_idle()
+
 
     def count_imagelayer(self):
         count = 0
@@ -808,6 +896,7 @@ class LayerManager:
         item.setCheckState(Qt.Checked)
         item.setWhatsThis(self.curr_layer)
         self.List.model.insertRow(int(self.curr_layer), item)
+        self.List.image_layers = self.image_layers
 
         ## update the layer
         layer.widget2layer()
@@ -819,14 +908,20 @@ class LayerManager:
         if self.curr_layer == '0':
             self.axes.cla()
             # set the layer to be checked
+            # embed()
             for itemname in ['Limb', 'Grid']:
                 item = self.List.model.findItems(itemname)[0]
                 self.image_layers[item.whatsThis()].parent = layer
-                item.setCheckState(Qt.Checked)
+                if not item.checkState():
+                    item.setCheckState(Qt.Checked)
+                else:
+                    self.image_layers[item.whatsThis()].im = []
+                    print('self.toggle_im(True, layer)', self.image_layers[item.whatsThis()])
+                    self.toggle_im(True, self.image_layers[item.whatsThis()])
 
         ## plot the layer
         layer.plot()
-
+        self.set_zorders()
 
     # @timetest
     def doubleclick(self, item):
@@ -836,14 +931,24 @@ class LayerManager:
             layer = self.image_layers[layer_id]
             layer.image_control.show()
 
+    # def rowsMove(self,start, end, destination):
+    #     print(start, end, destination)
+    #     # embed()
+
     def checkStateChange(self, item):
         print(item.text(), item.checkState())
         # embed()
         layer_id = item.model().item(item.row()).whatsThis()
         layer = self.image_layers[layer_id]
         self.toggle_im(item.checkState(), layer)
+        if layer_id not in ['solargrid', 'solarlimb']:
+            print('zorder,',layer.get_zorder())
+            print('zorders',self.get_zorders())
+            self.set_zorders()
+        # embed()
 
     def toggle_im(self, state=False, layer=None):
+        # print('toggle_im', layer.im, layer)
         if layer.im:
             s = bool(state)
             if type(layer.im) is list:
