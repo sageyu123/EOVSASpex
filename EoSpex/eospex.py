@@ -306,9 +306,9 @@ class MainWindow(QMainWindow):
                 if len(module_names) > 1:
                     self.statusbar.showMessage("Wow! More then one module can Open this file ..choose which one")
                 else:
-                    if (self.active_module):
-                        self.active_module.hide_gui()
-                        self.active_module.clear_gui()
+                    # if (self.active_module):
+                    #     self.active_module.hide_gui()
+                    #     self.active_module.clear_gui()
                     self.setActiveModule(self.loaded_modules[module_names[0]])
                     self.active_module.show_gui()
                     self.active_module.open_file(path)
@@ -328,12 +328,15 @@ class MainWindow(QMainWindow):
             # with f:  #     data = f.read()  #     self.textEdit.setText(data)
 
     # comment this part when test
-    # def closeEvent(self, event):
-    #     reply = QMessageBox.question(self, 'Message', "Are you sure to quit?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-    #     if reply == QMessageBox.Yes:
-    #         event.accept()
-    #     else:
-    #         event.ignore()
+    def closeEvent(self, event):
+        print('close event')
+        # reply = QMessageBox.question(self, 'Message', "Are you sure to quit?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        # if reply == QMessageBox.Yes:
+        #     event.accept()
+        # else:
+        #     event.ignore()
+        if self.active_module:
+            self.active_module.clear_gui()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():

@@ -81,12 +81,7 @@ class FITSViewer(Viewer_Module):
     fits_current_field_id = None
     fits_current_header = None
 
-    img_slicer = None
-    img_data = None
-    img_rotation = None
 
-    slider_dmax_value = None
-    slider_dmin_value = None
 
     def __init__(self, parent):
         self.parent_widget = parent
@@ -104,16 +99,6 @@ class FITSViewer(Viewer_Module):
         """Returning a string representing short info about module"""
         return self.info_msg
 
-    # def readfits(self, url=None):
-    #     self.fits_data = fits.open(url)
-    #     self.fits_data.verify('silentfix+warn')
-    #     self.fits_fields = [str(key[0]) + ' ' + key[1] for key in self.fits_data.info(False)]
-    #     self.fits_fields_to_id = dict(zip(self.fits_fields, range(len(self.fits_fields))))
-    #
-    #     for idx, field in enumerate(self.fits_fields):
-    #         if not type(self.fits_data[idx].data) == np.ndarray:
-    #             self.fits_fields.remove(field)
-    #             del self.fits_fields_to_id[field]
 
     def open_file(self, file_path):
         """Opens data file"""
@@ -138,14 +123,6 @@ class FITSViewer(Viewer_Module):
         self.header_viewer.setTableData(self.fits_data[self.fits_current_field_id].header)
         self.header_viewer.show()
 
-
-
-
-    # def reset_plot(self, who=None):
-    #     print('reset plot')
-    #     self.parent_widget.figure.axes.cla()
-    #     self.clear_solargrid()
-    #     self.clear_solarlimb()
 
 
     def LoadChunk(self):
@@ -217,15 +194,15 @@ class FITSViewer(Viewer_Module):
         pass
 
     def clear_gui(self):
-        # self.parent_widget.control_dataField.clear()
-        try:
-            self.img_slicer = None
-            self.img_data = None
-            self.parent_widget.figure.fig.delaxes(self.ax_cb)
-            self.image_control.destroy()
-        except:
-            pass
-        pass
+        # try:
+        print('clear gui-----')
+        for k, v in self.layermanger.image_layers.items():
+            v.destroy()
+        for ax in self.parent_widget.figure.fig.axes:
+            self.parent_widget.figure.fig.delaxes(ax)
+        # except:
+        #     pass
+        # pass
 
     def __del__(self):
         self.clear_gui()

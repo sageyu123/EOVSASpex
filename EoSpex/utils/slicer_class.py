@@ -36,7 +36,7 @@ class Slicer(object):
         self.parent_ui = parent_obj.image_control
         # embed()
         self.parent_layout = parent_obj.image_control.slicer_group.layout()
-        # self.parent_layout.setContentsMargins(0, 0, 0, 0)
+        self.parent_layout.setContentsMargins(0, 0, 0, 0)
         array = parent_obj.fits_data[parent_obj.fits_current_field_id].data
         header = parent_obj.fits_data[parent_obj.fits_current_field_id].header
         self.shape_raw = array.shape
@@ -192,6 +192,7 @@ class Slicer(object):
         combo.addItems(self.slicers_names)
         gbox_title = labelname
         gbox = QtWidgets.QGroupBox(gbox_title)
+        gbox.setMaximumSize(QtCore.QSize(16777215, 50))
         vlay = QtWidgets.QVBoxLayout(gbox)
         combo.setObjectName(labelname)  # store information about dimension
         vlay.setContentsMargins(0, 0, 0, 0)
@@ -201,9 +202,11 @@ class Slicer(object):
     def create_dim_slicer(self, dim_id, name, limit):
         gbox_title = name + " (indx = %d)"
         gbox = QtWidgets.QGroupBox(gbox_title % 0)
+        gbox.setMaximumSize(QtCore.QSize(16777215, 50))
         vlay = QtWidgets.QVBoxLayout(gbox)
         vlay.setContentsMargins(0, 0, 0, 0)
         slide = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        slide.setMaximumSize(QtCore.QSize(16777215, 22))
         slide.setMinimum(0)
         slide.setMaximum(limit - 1)
         slide.setObjectName(str(dim_id))  # store information about dimension
