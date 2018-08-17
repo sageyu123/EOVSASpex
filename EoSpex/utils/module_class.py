@@ -1,5 +1,3 @@
-# M. Szydlarski [mikolaj.szydlarski@astro.uio.no] - SolarAlma' 2017
-
 from abc import ABCMeta, abstractmethod
 
 
@@ -22,51 +20,51 @@ class Viewer_Module(object):
         pass
 
     @abstractmethod
-    def module_info():
+    def module_info(self):
         """Returning a string representing short info about module"""
         pass
 
     @abstractmethod
-    def open_file():
+    def open_file(self):
         """Opens data file"""
         pass
 
     @abstractmethod
-    def set_plot_data():
+    def set_plot_data(self):
         """Sets plot data"""
         pass
 
     @abstractmethod
-    def plot():
+    def plot(self):
         """Sets plot widget"""
         pass
 
     @abstractmethod
-    def update_plot():
+    def update_plot(self):
         """Updates plot widget without changing axes"""
         pass
 
     @abstractmethod
-    def update_data():
+    def update_data(self):
         """Update data object module"""
         pass
 
     @abstractmethod
-    def get_data_slice():
+    def get_data_slice(self):
         """Gets data slice"""
         pass
 
     @abstractmethod
-    def show_gui():
+    def show_gui(self):
         """Shows gui elements used by module"""
         pass
 
     @abstractmethod
-    def hide_gui():
+    def hide_gui(self):
         """Hides gui elements used by module"""
         pass
 
     @abstractmethod
-    def clean_gui():
+    def clean_gui(self):
         """Clean gui elements used by module"""
         pass

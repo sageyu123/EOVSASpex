@@ -23,25 +23,6 @@ class ImageControl(QtWidgets.QWidget):
         self.control_colors_list.addItems(plt.colormaps())
         # embed()
 
-    # def closeEvent(self, event):
-    #     ## disconnect all signals
-    #     try:
-    #         self.control_colors_list.disconnect()
-    #         self.control_log_check.disconnect()
-    #         self.control_abs_check.disconnect()
-    #         self.control_colorNorm_check.disconnect()
-    #         self.control_colorBar_check.disconnect()
-    #         self.control_dataField.disconnect()
-    #         self.control_displayMode.disconnect()
-    #         self.rotate_dial.disconnect()
-    #         self.Slider_dmin.disconnect()
-    #         self.Slider_dmax.disconnect()
-    #         self.control_SolarGrid_check.disconnect()
-    #         self.control_SolarLimb_check.disconnect()
-    #         self.destroy()
-    #     except:
-    #         pass
-
 
 
 class ImageControl_Line(QtWidgets.QWidget):
@@ -91,7 +72,6 @@ class ImageControl_Grid(ImageControl_Line):
 
         self.setWindowTitle('Grid')
         self.control_linestyleSelector.addItems(list(self.linestyles.keys()))
-        # self.control_linestyleSelector.setCurrentText('dashed')
 
 
 

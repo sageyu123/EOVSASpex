@@ -164,12 +164,13 @@ class Slicer(object):
         dim_the_same = ([type(x) for x in slice_idx] == [type(x) for x in self.slicers_idx])
         self.slicers_idx = slice_idx
         if (dim_the_same):
+            self.parent_obj.setPlotData()
             self.parent_obj.plot_update()  # just update
             print('update_plot')
         else:
             # embed()
             print('plot')
-            self.parent_obj.plot_initi()
+            self.parent_obj.plot()
         pass
         # Set title on bar
         self.slicers_widgets[self.slicers_widgets_idx[dim]].setTitle(self.slicers_titles[self.slicers_widgets_idx[dim]] % value)

@@ -1,30 +1,14 @@
 from PyQt5 import uic
-from PyQt5 import QtCore, QtWidgets, QtGui
-
-from astropy.io import fits
+from PyQt5 import QtCore, QtWidgets
 from astropy import units as u
 from astropy.time import Time
 from IPython import embed
-# import astropy.coordinates as cd
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QVBoxLayout
 import os
 import numpy as np
-import matplotlib.colorbar as colorbar
-import matplotlib.colors as colors
-import sunpy.cm.cm as cm  ## to bootstrap sdoaia color map
-import matplotlib.cm as cm
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 from utils.module_class import Viewer_Module
-from utils.slicer_class import Slicer
 import sunpy.map as smap
-import copy
-from sunpy.visualization import wcsaxes_compat
-from utils.layer_class import Layer, LayerManager, LayerList
-import collections
-
-from utils.utils import timetest
+from utils.layer_class import LayerManager
 from utils import utils
 
 

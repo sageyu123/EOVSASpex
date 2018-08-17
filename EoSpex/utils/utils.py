@@ -1,7 +1,6 @@
 import time
 import numpy as np
-
-
+from IPython import embed
 
 def timetest(input_func):
     def timed(*args, **kwargs):
@@ -15,17 +14,19 @@ def timetest(input_func):
 
     return timed
 
+
 ######################
 ## sunpy map related##
 ######################
 
-def map2wcsgrids(snpmap, cell=True):
+def map2wcsgrids(snpmap, cell=True, antialiased=True):
     '''
 
     :param snpmap:
     :param cell: if True, return the coordinates of the pixel centers. if False, return the coordinates of the pixel boundaries
     :return:
     '''
+    # embed()
     import astropy.units as u
     if cell:
         ny, nx = snpmap.data.shape
@@ -35,10 +36,18 @@ def map2wcsgrids(snpmap, cell=True):
         nx += 1
         ny += 1
         offset = -0.5
-    XX, YY = np.meshgrid(np.arange(nx) + offset, np.arange(ny) + offset)
-    mesh = snpmap.pixel_to_world(XX * u.pix, YY * u.pix)
-    mapx, mapy = mesh.Tx.value, mesh.Ty.value
+    if antialiased:
+        XX, YY = np.array([0, nx - 1]) + offset, np.array([0, ny - 1]) + offset
+        mesh = snpmap.pixel_to_world(XX * u.pix, YY * u.pix)
+        mapx, mapy = np.linspace(mesh[0].Tx.value,mesh[-1].Tx.value,nx), np.linspace(mesh[0].Ty.value,mesh[-1].Ty.value,ny)
+        mapx = np.tile(mapx,ny).reshape(ny,nx)
+        mapy = np.tile(mapy,nx).reshape(nx,ny).transpose()
+    else:
+        XX, YY = np.meshgrid(np.arange(nx) + offset, np.arange(ny) + offset)
+        mesh = snpmap.pixel_to_world(XX * u.pix, YY * u.pix)
+        mapx, mapy = mesh.Tx.value, mesh.Ty.value
     return mapx, mapy
+
 
 #######################
 ##SDO/AIA map related##
@@ -155,6 +164,7 @@ def sdo_aia_scale_dict(wavelength=None, imagetype='image'):
     else:
         return None
 
+
 def normalize_aiamap(aiamap):
     '''
     do expisure normalization of an aia map
@@ -174,6 +184,7 @@ def normalize_aiamap(aiamap):
             raise ValueError('input sunpy map is not from aia.')
     except:
         raise ValueError('check your input map. There are some errors in it.')
+
 
 ###############################
 ## time-distance plot related##

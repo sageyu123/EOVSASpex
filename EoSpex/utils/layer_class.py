@@ -5,16 +5,12 @@ import sunpy.cm.cm as cm  ## to bootstrap sdoaia color map
 import matplotlib.cm as cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from astropy.io import fits
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from astropy.time import Time
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QSizePolicy, QListView, QColorDialog
 from PyQt5 import QtWidgets, QtCore
-from PyQt5 import uic
-from IPython import embed
-import matplotlib.pyplot as plt
-import os
 import copy
 import numpy as np
 from utils import utils
@@ -22,11 +18,11 @@ from utils.utils import timetest
 import astropy.units as u
 from utils.ImageControl_class import ImageControl, ImageControl_Limb, ImageControl_Grid
 from utils.slicer_class import Slicer
+from utils.layer_base_class import Layer_Line_Base, Layer_Image_Base
 import sunpy.map as smap
+import time
+from IPython import embed
 
-
-# from enum import Enum
-# class LayerType(Enum):
 
 def signalDisconnect(signal, slot):
     try:
@@ -76,9 +72,10 @@ class LayerList(QListView):
     #     self.model.moveRow(self.model.item(selectedIdx).index(),1,self.model.item(self.dropIndicatorPosition()-1).index(),1)
 
 
-class Layer:
+class Layer_Image(Layer_Image_Base):
     def __init__(self, layer_id: 'layer_id', url: 'layer_url', frame_idx: 'frame_idx', parent_obj: 'parent_obj',
                  axes: 'axes') -> 'Layer_class':
+        super(Layer_Image, self).__init__(layer_id, url, frame_idx, parent_obj, axes)
         self.parent = parent_obj
         self.axes = axes
         self.mapdict = {}
@@ -96,9 +93,8 @@ class Layer:
         self.abs = False
         self.colorNorm = False
         self.colorBar = True
-        self.color = 0
         self.cmap = None
-        self.cmaps = []
+        self.norm = None
         self.dataField = 0
         self.dataFields = []
         self.img_rotation = 0
@@ -117,11 +113,10 @@ class Layer:
         self.divider = None
         self.ax_cb = None
         self.img_data = None
-        if layer_id not in ['solargrid', 'solarlimb']:
-            self.category = 'image'
-        else:
-            self.category = 'attribute'
         self.zorder = 0
+        self.dataxy_image = []
+        self.dataxy_conts = []
+        self.plot_settings = {}
 
     def get_zorder(self):
         if self.im:
@@ -157,8 +152,10 @@ class Layer:
             if not type(self.fits_data[idx].data) == np.ndarray:
                 self.fits_fields.remove(field)
                 del self.fits_fields_to_id[field]
+            else:
+                self.fits_data[idx].data[np.isnan(self.fits_data[idx].data)] = 0.0
 
-    def updatedata_from_widget(self):
+    def setData(self):
         self.fits_current_field_id = self.fits_fields_to_id[self.image_control.control_dataField.currentText()]
         # embed()
         if self.mapdict == {}:
@@ -170,7 +167,7 @@ class Layer:
             #                          self.mapdict['submc'][
             #                              self.layermanger.image_layers[self.layermanger.curr_layer].idx].header)
 
-    def updateColormapList(self):
+    def setColorMapList(self):
         ccl = self.image_control.control_colors_list
         cmaps = []
         if self.telescope == 'SDO/AIA':
@@ -227,10 +224,15 @@ class Layer:
     def plot_image(self):
         # print('plot_image')
         # embed()
-        mapx, mapy = utils.map2wcsgrids(self.spmap, cell=False)
-        # embed()
-        self.im = self.axes.pcolormesh(mapx, mapy, self.img_data,
-                                       **self.imshow_args)
+        t0 = time.time()
+        mapx, mapy = self.dataxy_image
+        print('plot_image mark 1 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
+        # self.im = self.axes.pcolormesh(mapx, mapy, self.img_data, antialiased=True, rasterized=True,# linewidth=0.01,
+        #                                **self.imshow_args)
+        self.im = self.axes.imshow(self.img_data, **self.imshow_args)
+        print('plot_image mark 2 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
         self.axes.set_xlim(self.spmap.xrange.to(u.arcsec).value)
         self.axes.set_ylim(self.spmap.yrange.to(u.arcsec).value)
         try:
@@ -241,41 +243,43 @@ class Layer:
 
         if self.image_control.control_colorBar_check.isChecked():
             self.plot_colorbar()
+        print('plot_image mark 3 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
         if self.img_slicer.slicers_widgets is not None:
             for s in self.img_slicer.slicers_widgets:
                 s.setEnabled(True)
+        print('plot_image mark 4 {:.4f}'.format(time.time() - t0))
 
-    # @timetest
-    def plot_conts(self, dmax=0.0, dmin=0.0, kw_update=[]):
+    def plot_conts(self, dmax=0.0, dmin=0.0):
+        t0 = time.time()
         levels = [dmin, dmax]
         naxis = self.plot_settings['slicers_axisinfo']['NAXIS'][self.plot_settings['dim_idx']]
         cmap = cm.get_cmap(self.plot_settings['cmap'])
         alpha = self.plot_settings['alpha']
-        if kw_update:
-            if 'cmap' in kw_update:
-                for s in range(naxis):
-                    self.im[s].set_cmap(colors.ListedColormap([cmap(float(s + 1) / naxis)] * len(levels)))
-            elif 'alpha' in kw_update:
-                for s in range(naxis):
-                    for c in self.im[s].collections:
-                        c.set_alpha(alpha)
-        else:
-            self.im = []
-            mapx, mapy = utils.map2wcsgrids(self.spmap)
-            for s in range(naxis):
-                self.im.append(
-                    self.axes.contourf(mapx, mapy, self.img_data[s, ...],
-                                       levels=levels,
-                                       colors=[cmap(float(s + 1) / naxis)] * len(levels),
-                                       alpha=self.plot_settings['alpha'],
-                                       antialiased=True))
-                for cnt in self.im[-1].collections:
-                    # This is the fix for the white lines between contour levels
-                    cnt.set_edgecolor("face")
-                    cnt.set_linewidth(0.000000000000000)  # ax.set_title(' ')
-            self.img_slicer.slicers_widgets[self.plot_settings['dim_idx']].setDisabled(True)
-            self.axes.set_xlim(self.spmap.xrange.to(u.arcsec).value)
-            self.axes.set_ylim(self.spmap.yrange.to(u.arcsec).value)
+        self.im = []
+        print('plot_conts mark 1 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
+        mapx, mapy = self.dataxy_conts
+        print('plot_conts mark 2 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
+        for s in range(naxis):
+            self.im.append(
+                self.axes.contourf(mapx, mapy, self.img_data[s, ...],
+                                   levels=levels,
+                                   colors=[cmap(float(s + 1) / naxis)] * len(levels),
+                                   alpha=self.plot_settings['alpha'],
+                                   antialiased=True))
+            for cnt in self.im[-1].collections:
+                # This is the fix for the white lines between contour levels
+                cnt.set_edgecolor("face")
+                cnt.set_linewidth(0.000000000000000)
+        print('plot_conts mark 3 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
+        self.img_slicer.slicers_widgets[self.plot_settings['dim_idx']].setDisabled(True)
+        self.axes.set_xlim(self.spmap.xrange.to(u.arcsec).value)
+        self.axes.set_ylim(self.spmap.yrange.to(u.arcsec).value)
+        print('plot_conts mark 4 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
         try:
             # allways try to remove color bar first to avoid overplots when new Fits file is added
             self.axes.figure.delaxes(self.ax_cb)
@@ -287,17 +291,20 @@ class Layer:
         if self.image_control.control_colorBar_check.isChecked():
             self.plot_colorbar(
                 custom_cb={'cmap': cm.get_cmap(self.plot_settings['cmap']), 'vmax': vmax, 'vmin': vmin, 'alpha': alpha})
+        print('plot_conts mark 5 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
         self.axes.figure.canvas.draw_idle()
+        print('plot_conts mark 6 {:.4f}'.format(time.time() - t0))
 
-    # @timetest
     def plot(self):
+        t0 = time.time()
         print('plot-------------')
         # fov = None
         who = self.image_control.sender()
-
+        print('plot mark 1 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
         if who is not None:
             if who.objectName() == 'control_displayMode':
-                # embed()
                 if type(self.im) is list:
                     for col in self.im:
                         if isinstance(col, QuadContourSet):
@@ -308,7 +315,8 @@ class Layer:
                 else:
                     self.im.remove()
                 self.im = []
-
+        print('plot mark 2 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
         # self.reset_plot(who=who)
         # self.axes.cla()
         parent_widget = self.parent.parent_widget
@@ -316,9 +324,10 @@ class Layer:
         parent_widget.slitline, = self.axes.plot([], [], color='white', ls='solid')
         parent_widget.slitline0, = self.axes.plot([], [], color='white', ls='dotted')
         parent_widget.slitline1, = self.axes.plot([], [], color='white', ls='dotted')
-
-        self.set_plot_data()
-
+        print('plot mark 3 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
+        print('plot mark 4 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
         if self.dmode == 'tconts':
             dmin_new, dmax_new = self.reset_drange_sliders()
             if self.slider_dmax_value == dmax_new and self.slider_dmin_value == dmin_new:
@@ -331,21 +340,27 @@ class Layer:
             if who is not None:
                 if who.objectName() == 'control_displayMode':
                     self.reset_drange_sliders()
-
+        print('plot mark 5 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
         self.axes.format_coord = lambda x, y: '[ x = %.2f , y = %.2f ]' % (x, y)
         self.axes.format_cursor_data = "x"
         self.axes.format_zdata = "nope"
-        self.axes.figure.canvas.draw()
+        self.axes.figure.canvas.draw_idle()
+        print('plot mark 6 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
         zoom_fov = self.parent.parent_widget.navi_toolbar.zoom_fov
         if zoom_fov:
             self.axes.set_xlim(zoom_fov[:2])
             self.axes.set_ylim(zoom_fov[2:])
 
         self.parent.parent_widget.statusbar.showMessage("Plot refeshed!")
+        print('plot mark 7 {:.4f}'.format(time.time() - t0))
 
+    # @timetest
     def plot_update(self):
         """Updates plot widget"""
         print('update_plot')
+        t0 = time.time()
         updateplotflag = True
         ic = self.image_control
         who = ic.sender()
@@ -369,12 +384,14 @@ class Layer:
                 self.alpha = ic.Slider_alpha.value() / 100.
                 ic.Slider_alpha_GBox.setTitle(
                     'alpha  --> {:.2f}'.format(self.alpha))
+        print('plot_upgrade mark 1 {:.4f}'.format(time.time() - t0))
+        t0 = time.time()
         self.parent.parent_widget.statusbar.showMessage("Update Plot!")
         if updateplotflag:
-            if who is not None:
-                print(who.objectName())
-                if who.objectName() not in ['control_displayMode']:
-                    self.set_plot_data()
+            # if who is not None:
+            #     print(who.objectName())
+            #     if who.objectName() not in ['control_displayMode']:
+            #         self.setPlotData()
             if self.plot_settings['dmode'] == 'tconts':
                 dmax, dmin = self.drange_normalize(
                     data_in=[ic.Slider_dmax.value(), ic.Slider_dmin.value()],
@@ -382,9 +399,17 @@ class Layer:
                 if who.objectName() in ['control_displayMode']:
                     self.plot_conts(dmax=dmax, dmin=dmin)
                 elif who.objectName() in ['control_colors_list']:
-                    self.plot_conts(dmax=dmax, dmin=dmin, kw_update=['cmap'])
+                    levels = [dmin, dmax]
+                    naxis = self.plot_settings['slicers_axisinfo']['NAXIS'][self.plot_settings['dim_idx']]
+                    cmap = cm.get_cmap(self.plot_settings['cmap'])
+                    for s in range(naxis):
+                        self.im[s].set_cmap(colors.ListedColormap([cmap(float(s + 1) / naxis)] * len(levels)))
                 elif who.objectName() in ['Slider_alpha']:
-                    self.plot_conts(dmax=dmax, dmin=dmin, kw_update=['alpha'])
+                    alpha = self.plot_settings['alpha']
+                    naxis = self.plot_settings['slicers_axisinfo']['NAXIS'][self.plot_settings['dim_idx']]
+                    for s in range(naxis):
+                        for c in self.im[s].collections:
+                            c.set_alpha(alpha)
                 elif who.objectName() in ['Slider_dmin', 'Slider_dmax', 'control_colorBar_check', 'control_wcs_check']:
                     try:
                         for cnts in self.im:
@@ -396,7 +421,8 @@ class Layer:
                 else:
                     pass
             else:
-                self.im.set_array(self.img_data.ravel())
+                # self.im.set_array(self.img_data.ravel())
+                self.im.set_array(self.img_data)
                 self.im.axes.autoscale(False, 'both', True)
                 self.im.axes.autoscale_view(True, True, True)
                 self.im.axes.relim(visible_only=True)
@@ -407,7 +433,8 @@ class Layer:
             if zoom_fov:
                 self.axes.set_xlim(zoom_fov[:2])
                 self.axes.set_ylim(zoom_fov[2:])
-            self.axes.figure.canvas.draw()
+            self.axes.figure.canvas.draw_idle()
+        print('plot_upgrade mark 2 {:.4f}'.format(time.time() - t0))
 
     def drange_normalize(self, drange=None, data_in=None, reverse=False):
         ## normalize the data dynamic range to 1~100
@@ -431,13 +458,9 @@ class Layer:
         data_out = atten_func(data_in)
         return data_out
 
-    @timetest
-    def set_plot_data(self):
-        # print('set_plot_data')
-        # embed()
-        self.plot_settings = self.widget2layer()
-        # embed()
-        if self.plot_settings['dmode'] == 'tconts':
+    def setPlotData(self):
+        t0 = time.time()
+        if self.getDmode() == 'tconts':
             self.img_data = self.img_slicer.data.copy()
             if self.mapdict == {}:
                 img_data_2D = self.img_slicer.get_slice().copy()
@@ -455,35 +478,51 @@ class Layer:
                     self.spmap = smap.Map((self.img_data, self.fits_data[self.fits_current_field_id].header))
             else:
                 self.spmap = self.mapdict['submc'][self.idx]
+        print('setPlotData mark 1 {:.4f}'.format(time.time() - t0))
+
+    def setPlotDataXY(self):
+        t0 = time.time()
+        self.dataxy_image = utils.map2wcsgrids(self.spmap, cell=False)
+        self.dataxy_conts = utils.map2wcsgrids(self.spmap)
+        print('setPlotDataXY mark 1 {:.4f}'.format(time.time() - t0))
+
+    def updatePlotSettings(self):
+        # print('updatePlotData')
+        t0 = time.time()
+
+        ic = self.image_control
 
         if self.plot_settings['abs']:
             self.img_data = np.abs(self.img_data)
-
-        try:
-            vmax, vmin = self.drange_normalize(
-                data_in=[self.image_control.Slider_dmax.value(), self.image_control.Slider_dmin.value()],
-                reverse=True)
-        except:
-            vmin = self.image_control.Slider_dmin.value()
-            vmax = self.image_control.Slider_dmax.value()
-        if self.plot_settings['log']:
-            lowcut = 1.0
-            if vmin < lowcut:
-                vmin = lowcut
-            norm = colors.LogNorm(vmin=vmin, vmax=vmax)
-        else:
-            if self.plot_settings['colorNorm']:
-                norm = None
-            else:
-                norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
         if self.plot_settings['dmode'] == 'imgs':
             img_rotation = self.plot_settings['img_rotation']
             if (img_rotation > 0):
                 self.img_data = np.rot90(self.img_data, img_rotation)
 
-        self.imshow_args = {'cmap': cm.get_cmap(self.plot_settings['cmap']), 'norm': norm,
-                            'alpha': self.plot_settings['alpha']}
+        try:
+            vmax, vmin = self.drange_normalize(
+                data_in=[ic.Slider_dmax.value(), ic.Slider_dmin.value()],
+                reverse=True)
+        except:
+            vmin = ic.Slider_dmin.value()
+            vmax = ic.Slider_dmax.value()
+        if self.plot_settings['log']:
+            lowcut = 1.0
+            if vmin < lowcut:
+                vmin = lowcut
+            self.norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+        else:
+            if self.plot_settings['colorNorm']:
+                self.norm = None  # colors.Normalize(vmin=np.nanmin(self.img_data), vmax=np.nanmax(self.img_data))
+            else:
+                self.norm = colors.Normalize(vmin=vmin, vmax=vmax)
+
+        self.imshow_args = {'cmap': cm.get_cmap(self.plot_settings['cmap']), 'norm': self.norm,
+                            'alpha': ic.Slider_alpha.value() / 100., 'origin': 'lower', 'interpolation': 'nearest',
+                            'extent': [self.dataxy_conts[0][0][0], self.dataxy_conts[0][0][-1],
+                                       self.dataxy_conts[-1][0][0],
+                                       self.dataxy_conts[-1][-1][0]]}
 
         try:
             xaxis_type = self.spmap.coordinate_system.axis1
@@ -506,69 +545,93 @@ class Layer:
             ylabel = 'Solar Y-position ({ypos})'.format(ypos=yaxis_unit)
         self.axes.set_xlabel(xlabel)
         self.axes.set_ylabel(ylabel)
+        print('updatePlotData mark 3 {:.4f}'.format(time.time() - t0))
 
-    @timetest
-    def widget2layer(self):
-
-        ic = self.image_control
-
-        ## image settings
-        self.log = ic.control_log_check.isChecked()
-        self.abs = ic.control_abs_check.isChecked()
-        self.colorNorm = ic.control_colorNorm_check.isChecked()
-        self.colorBar = ic.control_colorBar_check.isChecked()
-        ccl = ic.control_colors_list
-        self.color = ccl.currentIndex()
-        self.cmap = ccl.currentText()
-        self.cmaps = [ccl.itemText(i) for i in range(ccl.count())]
-        self.img_rotation = ic.rotate_dial.value()
-
-        ## Display Mode
-        cdm = ic.control_displayMode
+    def getDmode(self):
+        cdm = self.image_control.control_displayMode
         if cdm.currentText() == 'Images':
             self.dmode = 'imgs'
         elif cdm.currentText().startswith('Transparent Contours'):
             self.dmode = 'tconts'
         else:
             self.dmode = 'imgs'
+        return self.dmode
 
-        ## slicer
-        self.slicers_axisinfo = self.img_slicer.slicers_axisinfo
-        if hasattr(self.img_slicer, 'combos'):
-            dim_idx = copy.copy(self.img_slicer.slicers_axisinfo['DIM_IDX'])
-            for ll in self.img_slicer.combos:
-                dim_idx.pop(dim_idx.index(ll.currentIndex()))
-            self.dim_idx = dim_idx[0]
-        else:
-            self.dim_idx = 0
+    def image_controlEventManager(self):
+        ic = self.image_control
+        who = ic.sender()
+        if who is not None:
+            print(who.objectName())
+            if who.objectName() == 'control_colors_list':
+                self.plot_settings['cmap'] = ic.control_colors_list.currentText()
+                self.updatePlotSettings()
+                self.plot_update()
+            elif who.objectName() == 'control_log_check':
+                self.plot_settings['log'] = ic.control_log_check.isChecked()
+                self.setPlotData()
+                self.updatePlotSettings()
+                self.plot_update()
+            elif who.objectName() == 'control_abs_check':
+                self.plot_settings['abs'] = ic.control_abs_check.isChecked()
+                self.setPlotData()
+                self.updatePlotSettings()
 
-        return self.info
+                self.plot_update()
+            elif who.objectName() == 'control_colorNorm_check':
+                self.plot_settings['colorNorm'] = ic.control_colorNorm_check.isChecked()
+                self.updatePlotSettings()
+                self.plot_update()
+            elif who.objectName() == 'control_colorBar_check':
+                self.plot_settings['colorBar'] = ic.control_colorBar_check.isChecked()
+                self.toggle_colorbar(self.plot_settings['colorBar'])
+            elif who.objectName() == 'control_dataField':
+                self.setData()
+            elif who.objectName() == 'control_displayMode':
+                self.setPlotData()
+                self.getDmode()
+                self.plot()
+                self.parent.layermanger.setZorders()
+            elif who.objectName() == 'rotate_dial':
+                self.plot_settings['img_rotation'] = ic.rotate_dial.value()
+                self.updatePlotSettings()
+                self.plot_update()
+            elif who.objectName() == 'Slider_dmin':
+                self.updatePlotSettings()
+                self.plot_update()
+            elif who.objectName() == 'Slider_dmax':
+                self.updatePlotSettings()
+                self.plot_update()
+            elif who.objectName() == 'Slider_alpha':
+                self.updatePlotSettings()
+                self.plot_update()
+            else:
+                pass
 
     def image_control_connect(self):
         ic = self.image_control
 
         # --- assign control actions/signals
-        ic.control_colors_list.activated.connect(self.plot_update)
-        ic.control_log_check.stateChanged.connect(self.plot_update)
-        ic.control_abs_check.stateChanged.connect(self.plot_update)
-        ic.control_colorNorm_check.stateChanged.connect(self.plot_update)
-        ic.control_colorBar_check.stateChanged.connect(self.toggle_colorbar)
+        ic.control_colors_list.activated.connect(self.image_controlEventManager)
+        ic.control_log_check.stateChanged.connect(self.image_controlEventManager)
+        ic.control_abs_check.stateChanged.connect(self.image_controlEventManager)
+        ic.control_colorNorm_check.stateChanged.connect(self.image_controlEventManager)
+        ic.control_colorBar_check.stateChanged.connect(self.image_controlEventManager)
 
         # --- Data field selector
-        ic.control_dataField.activated.connect(self.updatedata_from_widget)
+        ic.control_dataField.activated.connect(self.image_controlEventManager)
 
         # --- Display mode selector
-        ic.control_displayMode.activated.connect(self.plot)
+        ic.control_displayMode.activated.connect(self.image_controlEventManager)
 
         # --- Rotate dial
-        ic.rotate_dial.valueChanged.connect(self.plot_update)
+        ic.rotate_dial.valueChanged.connect(self.image_controlEventManager)
 
         # --- Data drange sliders
-        ic.Slider_dmin.valueChanged.connect(self.plot_update)
-        ic.Slider_dmax.valueChanged.connect(self.plot_update)
+        ic.Slider_dmin.valueChanged.connect(self.image_controlEventManager)
+        ic.Slider_dmax.valueChanged.connect(self.image_controlEventManager)
 
         # --- layer alpha slider
-        ic.Slider_alpha.valueChanged.connect(self.plot_update)
+        ic.Slider_alpha.valueChanged.connect(self.image_controlEventManager)
 
     def image_control_disconnect(self):
         ic = self.image_control
@@ -601,7 +664,7 @@ class Layer:
         ic.Slider_alpha.setMaximum(100)
         ic.Slider_alpha.setSingleStep(1)
         ic.Slider_alpha.setValue(100)
-        self.slider_alpha_value = 1.
+        self.alpha = 1.
 
     def init_drange_sliders(self, drange=None, dmaxvalue=None, dminvalue=None):
         dmin, dmax = self.drange_normalize(drange=drange)
@@ -685,36 +748,57 @@ class Layer:
 
     @property
     def info(self):
+
+        ic = self.image_control
+        ## image settings
+        self.log = ic.control_log_check.isChecked()
+        self.abs = ic.control_abs_check.isChecked()
+        self.colorNorm = ic.control_colorNorm_check.isChecked()
+        self.colorBar = ic.control_colorBar_check.isChecked()
+        ccl = ic.control_colors_list
+        self.cmap = ccl.currentText()
+        self.img_rotation = ic.rotate_dial.value()
+        self.alpha = ic.Slider_alpha.value() / 100.
+
+        ## Display Mode
+        self.getDmode()
+
+        ## slicer
+        self.slicers_axisinfo = self.img_slicer.slicers_axisinfo
+        if hasattr(self.img_slicer, 'combos'):
+            dim_idx = copy.copy(self.img_slicer.slicers_axisinfo['DIM_IDX'])
+            for ll in self.img_slicer.combos:
+                dim_idx.pop(dim_idx.index(ll.currentIndex()))
+            self.dim_idx = dim_idx[0]
+        else:
+            self.dim_idx = 0
         return vars(self)
 
     def __repr__(self):
         return "Layer('{}')".format(self.layer_name)
 
 
-class Layer_Limb:
+class Layer_Limb(Layer_Line_Base):
 
     def __init__(self, layer_id: 'layer_id', parent_obj: 'parent_obj', axes: 'axes') -> 'Layer_Limb_class':
-        self.parent = parent_obj
-        self.axes = axes
-        self.alpha = 1.0
-        self.linewidth = 0.5
+        super(Layer_Limb, self).__init__(layer_id, parent_obj, axes)
         self.linestyle = 'solid'
-        self.layer_id = layer_id
-        self.layer_name = 'layer{}'.format(layer_id)
-        self.layer_title = None
-        self.color = '#FFFFFF'
-        self.im = []
-        self.im_cbar = None
         self.image_control = ImageControl_Limb()
-        self.zorder = 0
-        self.image_control.control_linestyleSelector.setCurrentText(self.linestyle)
-        self.image_control.Slider_alpha_GBox.setTitle('alpha  --> {:.2f}'.format(self.alpha))
-        self.image_control.Slider_linewidth_GBox.setTitle('line width  --> {:.2f}'.format(self.linewidth))
-        self.image_control.Slider_linewidth.setValue(self.linewidth * 20)
-        self.image_control_connect()
+        ic = self.image_control
+        ic.control_linestyleSelector.setCurrentText(self.linestyle)
+        ic.Slider_alpha_GBox.setTitle('alpha  --> {:.2f}'.format(self.alpha))
+        ic.Slider_linewidth_GBox.setTitle('line width  --> {:.2f}'.format(self.linewidth))
+        ic.Slider_linewidth.setValue(self.linewidth * 20)
+        # --- assign control actions/signals
+        ic.control_colorSelector.clicked.connect(self.plot_update)
+        # --- line style selector
+        ic.control_linestyleSelector.activated.connect(self.plot_update)
+        # --- line width sliders
+        ic.Slider_linewidth.valueChanged.connect(self.plot_update)
+        # --- layer alpha slider
+        ic.Slider_alpha.valueChanged.connect(self.plot_update)
 
     def plot(self):
-        # embed()
         if self.im:
             for col in self.im:
                 for cl in col:
@@ -729,62 +813,8 @@ class Layer_Limb:
             linestyle = ic.linestyles[ic.control_linestyleSelector.currentText()]
             self.im += self.axes.plot(x, y, linewidth=self.linewidth, alpha=self.alpha, color=self.color,
                                       linestyle=linestyle, zorder=zorder)
-        # print(self, self.im)
-
-    def hide_plot(self):
-        if self.im:
-            for col in self.im:
-                for cl in col:
-                    cl.set_visible(False)
-
-    def get_zorder(self):
-        if self.im:
-            if type(self.im) is list:
-                if isinstance(self.im[0], QuadContourSet):
-                    self.zorder = self.im[0].collections[0].get_zorder()
-                else:
-                    self.zorder = self.im[0].get_zorder()
-            else:
-                self.zorder = self.im.get_zorder()
-        return self.zorder
-
-    def image_control_connect(self):
-        ic = self.image_control
-
-        # --- assign control actions/signals
-        ic.control_colorSelector.clicked.connect(self.plot_update)
-
-        # --- line style selector
-        ic.control_linestyleSelector.activated.connect(self.plot_update)
-
-        # --- line width sliders
-        ic.Slider_linewidth.valueChanged.connect(self.plot_update)
-
-        # --- layer alpha slider
-        ic.Slider_alpha.valueChanged.connect(self.plot_update)
-
-    def image_control_disconnect(self):
-        ic = self.image_control
-
-        ## disconnect all signals
-        try:
-            ic.control_colorSelector.disconnect()
-            ic.control_linestyleSelector.disconnect()
-            ic.Slider_linewidth.disconnect()
-            ic.Slider_alpha.disconnect()
-        except:
-            pass
-
-    def color_picker(self):
-        color = QColorDialog.getColor()
-        self.image_control.control_colorSelector.setStyleSheet("QWidget { background-color: %s}" % color.name())
-        print("QWidget { background-color: %s}" % color.name())
-        return color.name()
 
     def plot_update(self):
-        """Updates plot widget"""
-        print('update_plot')
-        updateplotflag = True
         ic = self.image_control
         who = ic.sender()
         if who is not None:
@@ -807,7 +837,30 @@ class Layer_Limb:
                     'alpha  --> {:.2f}'.format(self.alpha))
                 for im in self.im:
                     im.set_alpha(self.alpha)
-        self.axes.figure.canvas.draw()
+        self.axes.figure.canvas.draw_idle()
+
+    def hide_plot(self):
+        if self.im:
+            for col in self.im:
+                for cl in col:
+                    cl.set_visible(False)
+
+    def get_zorder(self):
+        if self.im:
+            if type(self.im) is list:
+                if isinstance(self.im[0], QuadContourSet):
+                    self.zorder = self.im[0].collections[0].get_zorder()
+                else:
+                    self.zorder = self.im[0].get_zorder()
+            else:
+                self.zorder = self.im.get_zorder()
+        return self.zorder
+
+    def color_picker(self):
+        color = QColorDialog.getColor()
+        self.image_control.control_colorSelector.setStyleSheet("QWidget { background-color: %s}" % color.name())
+        print("QWidget { background-color: %s}" % color.name())
+        return color.name()
 
     @property
     def info(self):
@@ -826,13 +879,23 @@ class Layer_Grid(Layer_Limb):
         self.linestyle = 'dashed'
         self.gridspacing = 15.
         self.image_control = ImageControl_Grid()
-        self.image_control.control_linestyleSelector.setCurrentText(self.linestyle)
-        self.image_control.Slider_alpha_GBox.setTitle('alpha  --> {:.2f}'.format(self.alpha))
-        self.image_control.Slider_linewidth_GBox.setTitle('line width  --> {:.2f}'.format(self.linewidth))
-        self.image_control.Slider_linewidth.setValue(self.linewidth * 20)
-        self.image_control.Slider_gridspacing_GBox.setTitle('grid spacing  --> {:.0f} deg'.format(self.gridspacing))
-        self.image_control.Slider_gridspacing.setValue(self.gridspacing)
-        self.image_control_connect()
+        ic = self.image_control
+        ic.control_linestyleSelector.setCurrentText(self.linestyle)
+        ic.Slider_alpha_GBox.setTitle('alpha  --> {:.2f}'.format(self.alpha))
+        ic.Slider_linewidth_GBox.setTitle('line width  --> {:.2f}'.format(self.linewidth))
+        ic.Slider_linewidth.setValue(self.linewidth * 20)
+        ic.Slider_gridspacing_GBox.setTitle('grid spacing  --> {:.0f} deg'.format(self.gridspacing))
+        ic.Slider_gridspacing.setValue(self.gridspacing)
+        # --- assign control actions/signals
+        ic.control_colorSelector.clicked.connect(self.plot_update)
+        # --- line style selector
+        ic.control_linestyleSelector.activated.connect(self.plot_update)
+        # --- line width sliders
+        ic.Slider_linewidth.valueChanged.connect(self.plot_update)
+        # --- layer alpha slider
+        ic.Slider_alpha.valueChanged.connect(self.plot_update)
+        # --- layer grid spacing slider
+        ic.Slider_gridspacing.valueChanged.connect(self.plot_update)
 
     def plot(self, grid_spacing=None):
         if grid_spacing is None:
@@ -861,16 +924,17 @@ class Layer_Grid(Layer_Limb):
             b0 = self.parent.spmap.heliographic_latitude.to(u.deg)
             l0 = self.parent.spmap.heliographic_longitude.to(u.deg)
             hg_longitude_deg = np.linspace(-90, 90, num=91) * u.deg
-            hg_latitude_deg = np.arange(-90, 90, grid_spacing.to(u.deg).value) * u.deg
+            hg_latitude_deg = np.arange(0, 90, grid_spacing.to(u.deg).value)
+            hg_latitude_deg = np.hstack([-hg_latitude_deg[1:][::-1], hg_latitude_deg]) * u.deg
             zorder = max([_.zorder for _ in self.axes.get_children()]) + 1000
-            # zorder=None
             for lat in hg_latitude_deg:
                 c = hgs2hcc(rsun, hg_longitude_deg, lat * np.ones(91), b0, l0)
                 coords = hcc2hpc(c[0], c[1], c[2], dsun)
                 self.im += self.axes.plot(coords[0].to(u.arcsec), coords[1].to(u.arcsec), linewidth=self.linewidth,
                                           alpha=self.alpha, color=self.color, linestyle=self.linestyle, zorder=zorder)
 
-            hg_longitude_deg = np.arange(-90, 90, grid_spacing.to(u.deg).value) * u.deg
+            hg_longitude_deg = np.arange(0, 90, grid_spacing.to(u.deg).value)
+            hg_longitude_deg = np.hstack([-hg_longitude_deg[1:][::-1], hg_longitude_deg]) * u.deg
             hg_latitude_deg = np.linspace(-90, 90, num=91) * u.deg
 
             for lon in hg_longitude_deg:
@@ -878,12 +942,8 @@ class Layer_Grid(Layer_Limb):
                 coords = hcc2hpc(c[0], c[1], c[2], dsun)
                 self.im += self.axes.plot(coords[0].to(u.arcsec), coords[1].to(u.arcsec), linewidth=self.linewidth,
                                           alpha=self.alpha, color=self.color, linestyle=self.linestyle, zorder=zorder)
-        # print(self, self.im)
 
     def plot_update(self):
-        """Updates plot widget"""
-        print('update_plot')
-        updateplotflag = True
         ic = self.image_control
         who = ic.sender()
         if who is not None:
@@ -915,36 +975,7 @@ class Layer_Grid(Layer_Limb):
                 self.im = []
                 self.plot(grid_spacing=self.gridspacing * u.deg)
 
-        self.axes.figure.canvas.draw()
-
-    def hide_plot(self):
-        if self.im:
-            for col in self.im:
-                for cl in col:
-                    cl.set_visible(False)
-
-
-    def image_control_connect(self):
-        ic = self.image_control
-
-        # --- assign control actions/signals
-        ic.control_colorSelector.clicked.connect(self.plot_update)
-
-        # --- line style selector
-        ic.control_linestyleSelector.activated.connect(self.plot_update)
-
-        # --- line width sliders
-        ic.Slider_linewidth.valueChanged.connect(self.plot_update)
-
-        # --- layer alpha slider
-        ic.Slider_alpha.valueChanged.connect(self.plot_update)
-
-        try:
-            # --- layer gridspacing slider
-            ic.Slider_gridspacing.valueChanged.connect(self.plot_update)
-        except:
-            pass
-
+        self.axes.figure.canvas.draw_idle()
 
 
 class LayerManager:
@@ -958,6 +989,17 @@ class LayerManager:
         self.parent.parent_widget.LayerLayout.addWidget(self.List)
         self.parent.parent_widget.LayerLayout.setContentsMargins(0, 0, 2, 1)
         self.curr_layer = '0'
+        self.zorders = []
+
+        self.image_layers['solarlimb'] = Layer_Limb('solarlimb', None, self.axes)
+        item = QStandardItem('Limb')
+        item.setCheckable(True)
+        item.setEditable(False)
+        item.setDragEnabled(False)
+        item.setDropEnabled(False)
+        item.setCheckState(Qt.Unchecked)
+        item.setWhatsThis('solarlimb')
+        self.List.model.appendRow(item)
 
         self.image_layers['solargrid'] = Layer_Grid('solargrid', None, self.axes)
         item = QStandardItem('Grid')
@@ -969,47 +1011,33 @@ class LayerManager:
         item.setWhatsThis('solargrid')
         self.List.model.appendRow(item)
 
-        self.image_layers['solarlimb'] = Layer_Limb('solarlimb', None, self.axes)
-        item = QStandardItem('Limb')
-        item.setCheckable(True)
-        item.setEditable(False)
-        item.setDragEnabled(False)
-        item.setDropEnabled(False)
-        item.setCheckState(Qt.Unchecked)
-        item.setWhatsThis('solarlimb')
-        self.List.model.appendRow(item)
-        self.zorders = []
-
         self.List.model.itemChanged.connect(self.checkStateChange)
-        # self.List.rowsAboutToBeRemoved.connect(self.rowsMove)
-        # self.List.clicked.connect(self.click)
-        # embed()
-        self.List.doubleClicked.connect(self.doubleclicked)
-        # self.List.indexesMoved.connect(self.delete)
+        self.List.doubleClicked.connect(self.doubleClicked)
 
-    def get_zorders(self):
+    def getZorders(self):
         self.zorders = []
         for k, v in self.image_layers.items():
-            if isinstance(v, Layer):
+            if isinstance(v, Layer_Image):
                 self.zorders.append(v.get_zorder())
         return self.zorders
 
-    def set_zorders(self):
+    @timetest
+    def setZorders(self):
         layers = []
         model = self.List.model
         for idx in range(model.rowCount()):
             layer_id = model.item(idx).whatsThis()
-            if isinstance(self.image_layers[layer_id], Layer):
+            if isinstance(self.image_layers[layer_id], Layer_Image):
                 layers.append(self.image_layers[layer_id])
         self.zorders = np.arange(len(layers))[::-1] + 1
         for idx, ly in enumerate(layers):
             ly.set_zorder(self.zorders[idx])
         self.fig.canvas.draw_idle()
 
-    def count_imagelayer(self):
+    def countImageLayer(self):
         count = 0
         for k, v in self.image_layers.items():
-            if isinstance(v, Layer):
+            if isinstance(v, Layer_Image):
                 count += 1
         return count
 
@@ -1029,34 +1057,41 @@ class LayerManager:
     def register(self, url=None):
         if url is str:
             url = [url]
-        self.curr_layer = str(self.count_imagelayer())
-        layer = self.image_layers[self.curr_layer] = Layer(self.curr_layer, url, 0, self.parent, self.axes)
+        self.curr_layer = str(self.countImageLayer())
+        ## initial the layer
+        layer = self.image_layers[self.curr_layer] = Layer_Image(self.curr_layer, url, 0, self.parent, self.axes)
+        ## read the data
         layer.readfits(url[0])
+        print('register layer: {}'.format(self.curr_layer))
+        ## initial the image_control widget settings
         ic = layer.image_control
+        ## set the datafield
         ic.control_dataField.clear()  # always remove items first
         ic.control_dataField.addItems(layer.fits_fields)
         self.parent.parent_widget.actionDisplay_Header.setEnabled(True)
         self.parent.parent_widget.actionDisplay_Header.triggered.connect(self.parent.DisplayHeader)
-        layer.updatedata_from_widget()
+        ## set the data
+        layer.setData()
+        ## set the display mode
         ic.control_displayMode.clear()
         control_displaymode = ['Images']
         for cidx, c_dm in enumerate(layer.img_slicer.slicers_axisinfo['CTYPE'][:-2]):
             control_displaymode.append('Transparent Contours - Dim {}'.format(c_dm))
         ic.control_displayMode.addItems(control_displaymode)
-        print('register layer: {}'.format(self.curr_layer))
+        ## set the telescope
         layer.telescope = layer.img_slicer.header['TELESCOP']
-        layer.category = 'image'
-        layer.updateColormapList()
-        layer.set_plot_data()
-
+        ## set the enabled color maps
+        layer.setColorMapList()
+        ## set the plot data
+        layer.setPlotData()
+        ## set the plot dynamic range
         layer.drange = [np.nanmin(layer.img_data), np.nanmax(layer.img_data)]
-
         if layer.telescope == 'SDO/AIA':
             clrange = utils.sdo_aia_scale_dict(
                 wavelength=layer.fits_data[layer.fits_current_field_id].header['WAVELNTH'])
         else:
             clrange = {'low': None, 'high': None, 'log': False}
-
+        ## set the image control widget settings
         ic.control_log_check.setChecked(clrange['log'])
         layer.init_drange_sliders(layer.drange, dmaxvalue=clrange['high'],
                                   dminvalue=clrange['low'])
@@ -1075,7 +1110,7 @@ class LayerManager:
         self.List.image_layers = self.image_layers
 
         ## update the layer
-        layer.widget2layer()
+        layer.plot_settings = layer.info
 
         ## connect control signals
         layer.image_control_connect()
@@ -1092,38 +1127,35 @@ class LayerManager:
                     item.setCheckState(Qt.Checked)
                 else:
                     self.image_layers[item.whatsThis()].im = []
-                    print('self.toggle_im(True, layer)', self.image_layers[item.whatsThis()])
-                    self.toggle_im(True, self.image_layers[item.whatsThis()])
+                    self.toggleIM(True, self.image_layers[item.whatsThis()])
 
         ## plot the layer
+        layer.setPlotDataXY()
+        layer.updatePlotSettings()
         layer.plot()
-        self.set_zorders()
+        self.setZorders()
 
     # @timetest
-    def doubleclicked(self, item):
+    def doubleClicked(self, item):
         layer_id = item.model().item(item.row()).whatsThis()
         print(item.row(), layer_id, item.data())
         # if layer_id not in ['solargrid', 'solarlimb']:
         layer = self.image_layers[layer_id]
         layer.image_control.show()
 
-    # def rowsMove(self,start, end, destination):
-    #     print(start, end, destination)
-    #     # embed()
-
     def checkStateChange(self, item):
         print(item.text(), item.checkState())
         # embed()
         layer_id = item.model().item(item.row()).whatsThis()
         layer = self.image_layers[layer_id]
-        self.toggle_im(item.checkState(), layer)
+        self.toggleIM(item.checkState(), layer)
         if layer_id not in ['solargrid', 'solarlimb']:
             print('zorder,', layer.get_zorder())
-            print('zorders', self.get_zorders())
-            self.set_zorders()
+            print('zorders', self.getZorders())
+            self.setZorders()
         # embed()
 
-    def toggle_im(self, state=False, layer=None):
+    def toggleIM(self, state=False, layer=None):
         # print('toggle_im', layer.im, layer)
         if layer.im:
             s = bool(state)
