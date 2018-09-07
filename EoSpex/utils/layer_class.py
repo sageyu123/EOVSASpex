@@ -1050,8 +1050,12 @@ class LayerManager:
             h = {'DATATYPE': 'EOVSA{:.2f}GHz'.format(header['RESTFRQ'] / 1e9),
                  'DATE-OBS': Time(header['DATE-OBS']).isot}
         else:
-            h = {'DATATYPE': header['TELESCOP'],
-                 'DATE-OBS': Time(header['DATE-OBS']).isot}
+            try:
+                h = {'DATATYPE': header['TELESCOP'],
+                     'DATE-OBS': Time(header['DATE-OBS']).isot}
+            except:
+                h = {'DATATYPE': header['TELESCOP'],
+                     'DATE-OBS': Time(header['DATE_OBS']).isot}
         return h
 
     def register(self, url=None):
